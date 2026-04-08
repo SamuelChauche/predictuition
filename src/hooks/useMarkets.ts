@@ -136,59 +136,48 @@ interface TripleVault {
 
 const durations: MarketDuration[] = ["1h", "1d", "1m"];
 
+function durationLabel(d: MarketDuration): string {
+  return d === "1h" ? "hour" : d === "1d" ? "24 hours" : "month";
+}
+
 function generateAtomMarkets(vaults: AtomVault[]): Market[] {
   const markets: Market[] = [];
+  // 2 markets per duration: indices 0-1 → 1h, 2-3 → 1d, 4-5 → 1m
+  const slots = vaults.slice(0, 6);
 
-  vaults.forEach((v, i) => {
+  slots.forEach((v, i) => {
     const atom = v.term.atom;
     const label = atom.label || "Unknown Atom";
     const price = Number(v.current_share_price) / 1e18;
     const tvl = Number(v.total_assets) / 1e18;
-    const duration = durations[i % 3];
+    const duration = durations[Math.floor(i / 2)];
     const seed = pseudoRandom(v.term_id, i);
     const yesPool = 50 + (seed % 200);
     const noPool = 50 + ((seed >> 4) % 200);
+    const isEven = i % 2 === 0;
 
     markets.push({
-      id: `atom-ou-${v.term_id.slice(0, 16)}`,
-      type: "over_under",
+      id: `atom-${isEven ? "ou" : "br"}-${v.term_id.slice(0, 16)}`,
+      type: isEven ? "over_under" : "bracket",
       duration,
-      question: `Will ${label} share price go UP in the next ${duration === "1h" ? "hour" : duration === "1d" ? "24 hours" : "month"}?`,
-      description: `Current share price: ${price.toFixed(4)} TRUST. Resolves by reading currentSharePrice() on MultiVault.`,
+      question: isEven
+        ? `Will ${label} share price go UP in the next ${durationLabel(duration)}?`
+        : `${label} share price change in the next ${durationLabel(duration)}: above or below +5%?`,
+      description: isEven
+        ? `Current share price: ${price.toFixed(4)} TRUST. Resolves by reading currentSharePrice() on MultiVault.`
+        : `Will the share price move more than 5% from current ${price.toFixed(4)} TRUST?`,
       termId: atom.term_id,
       image: atom.image,
       currentPrice: price,
       tvl,
       positions: v.position_count,
-      yesLabel: "Higher",
-      noLabel: "Lower",
+      yesLabel: isEven ? "Higher" : "> +5%",
+      noLabel: isEven ? "Lower" : "< +5%",
       yesPool,
       noPool,
       deadline: nextDeadline(duration),
       category: "atoms",
     });
-
-    if (i < 4) {
-      const bracketDuration = durations[(i + 1) % 3];
-      markets.push({
-        id: `atom-br-${v.term_id.slice(0, 16)}`,
-        type: "bracket",
-        duration: bracketDuration,
-        question: `${label} share price change in the next ${bracketDuration === "1h" ? "hour" : bracketDuration === "1d" ? "24h" : "month"}: above or below +5%?`,
-        description: `Will the share price move more than 5% from current ${price.toFixed(4)} TRUST?`,
-        termId: atom.term_id,
-        image: atom.image,
-        currentPrice: price,
-        tvl,
-        positions: v.position_count,
-        yesLabel: "> +5%",
-        noLabel: "< +5%",
-        yesPool: 30 + (seed % 100),
-        noPool: 60 + ((seed >> 3) % 150),
-        deadline: nextDeadline(bracketDuration),
-        category: "atoms",
-      });
-    }
   });
 
   return markets;
@@ -196,15 +185,17 @@ function generateAtomMarkets(vaults: AtomVault[]): Market[] {
 
 function generateTripleMarkets(vaults: TripleVault[]): Market[] {
   const markets: Market[] = [];
+  // 2 markets per duration: indices 0-1 → 1h, 2-3 → 1d, 4-5 → 1m
+  const slots = vaults.slice(0, 6);
 
-  vaults.forEach((v, i) => {
+  slots.forEach((v, i) => {
     const t = v.term.triple;
     const subLabel = t.subject.label || "Unknown";
     const predLabel = t.predicate.label || "→";
     const objLabel = t.object.label || "Unknown";
     const price = Number(v.current_share_price) / 1e18;
     const tvl = Number(v.total_assets) / 1e18;
-    const duration = durations[i % 3];
+    const duration = durations[Math.floor(i / 2)];
     const seed = pseudoRandom(v.term_id, i);
     const yesPool = 40 + (seed % 180);
     const noPool = 40 + ((seed >> 4) % 180);
@@ -213,7 +204,7 @@ function generateTripleMarkets(vaults: TripleVault[]): Market[] {
       id: `triple-sent-${v.term_id.slice(0, 16)}`,
       type: "sentiment",
       duration,
-      question: `Will "${subLabel} ${predLabel} ${objLabel}" gain more trust in the next ${duration === "1h" ? "hour" : duration === "1d" ? "24h" : "month"}?`,
+      question: `Will "${subLabel} ${predLabel} ${objLabel}" gain more trust in the next ${durationLabel(duration)}?`,
       description: `Current TVL: ${tvl.toFixed(2)} TRUST, ${v.position_count} positions. Resolves by comparing vault totalAssets.`,
       termId: t.term_id,
       image: t.subject.image,

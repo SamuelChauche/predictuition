@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield } from "lucide-react";
+import { highlightQuestion } from "@/lib/highlightQuestion";
 import { useMarket } from "@/hooks/useMarkets";
 import { useSharePriceHistory } from "@/hooks/useAtoms";
 import { useFilteredChartData } from "@/hooks/useFilteredChartData";
@@ -74,7 +75,7 @@ export default function MarketDetail() {
               </div>
             )}
             <h1 className="text-xl font-bold text-foreground">
-              {market.question}
+              {highlightQuestion(market.question)}
             </h1>
           </div>
           <p className="text-sm text-muted-foreground">{market.description}</p>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Wallet, Users, Atom } from "lucide-react";
 import { CountdownTimer } from "./CountdownTimer";
 import type { Market } from "@/hooks/useMarkets";
+import { highlightQuestion } from "@/lib/highlightQuestion";
 
 function formatPool(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -32,16 +33,16 @@ export function MarketCard({ market }: { market: Market }) {
                 <Atom className="w-3.5 h-3.5 text-olive" />
               </div>
             )}
-            <p className="text-sm font-medium text-foreground leading-snug">
-              {market.question}
+            <p className="text-sm font-semibold text-foreground leading-snug">
+              {highlightQuestion(market.question)}
             </p>
           </div>
 
           {/* Progress bar */}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1.5 rounded-full overflow-hidden flex">
-              <div className="h-full bg-olive" style={{ width: `${yesPercent}%` }} />
-              <div className="h-full bg-brick" style={{ width: `${noPercent}%` }} />
+              <div className="h-full bg-[#90D18D]" style={{ width: `${yesPercent}%` }} />
+              <div className="h-full bg-[#FFA2B0]" style={{ width: `${noPercent}%` }} />
             </div>
           </div>
 
@@ -49,7 +50,7 @@ export function MarketCard({ market }: { market: Market }) {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              className="bg-olive/15 text-olive hover:bg-olive/25 border-0 flex-1 h-8 text-xs"
+              className="bg-[#90D18D]/15 text-[#90D18D] hover:bg-[#90D18D]/25 border-0 flex-1 h-8 text-xs"
               onClick={(e) => e.preventDefault()}
             >
               <ThumbsUp className="w-3 h-3 mr-1" />
@@ -57,7 +58,7 @@ export function MarketCard({ market }: { market: Market }) {
             </Button>
             <Button
               size="sm"
-              className="bg-brick/15 text-brick hover:bg-brick/25 border-0 flex-1 h-8 text-xs"
+              className="bg-[#FFA2B0]/15 text-[#FFA2B0] hover:bg-[#FFA2B0]/25 border-0 flex-1 h-8 text-xs"
               onClick={(e) => e.preventDefault()}
             >
               <ThumbsDown className="w-3 h-3 mr-1" />

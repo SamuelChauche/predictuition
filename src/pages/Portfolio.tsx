@@ -65,7 +65,7 @@ const mockBets: MockBet[] = [
 function BetRow({ bet }: { bet: MockBet }) {
   const isActive = bet.status === "active";
   const isWon = bet.status === "won";
-  const statusColor = isActive ? "text-sandy" : isWon ? "text-olive" : "text-brick";
+  const statusColor = isActive ? "text-sandy" : isWon ? "text-[#90D18D]" : "text-[#FFA2B0]";
   const StatusIcon = isActive ? Clock : isWon ? Trophy : TrendingDown;
 
   return (
@@ -74,7 +74,7 @@ function BetRow({ bet }: { bet: MockBet }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground truncate">{bet.question}</p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-          <span className={bet.side === "yes" ? "text-olive" : "text-brick"}>
+          <span className={bet.side === "yes" ? "text-[#90D18D]" : "text-[#FFA2B0]"}>
             {bet.sideLabel}
           </span>
           <span>&middot;</span>
@@ -84,13 +84,13 @@ function BetRow({ bet }: { bet: MockBet }) {
       <div className="text-right shrink-0">
         <p className="text-sm font-mono font-medium">{bet.amount} TRUST</p>
         {isActive && (
-          <p className="text-xs font-mono text-olive">→ {bet.potentialPayout.toFixed(1)}</p>
+          <p className="text-xs font-mono text-[#90D18D]">→ {bet.potentialPayout.toFixed(1)}</p>
         )}
         {isWon && (
-          <p className="text-xs font-mono text-olive">+{(bet.potentialPayout - bet.amount).toFixed(1)}</p>
+          <p className="text-xs font-mono text-[#90D18D]">+{(bet.potentialPayout - bet.amount).toFixed(1)}</p>
         )}
         {bet.status === "lost" && (
-          <p className="text-xs font-mono text-brick">-{bet.amount.toFixed(1)}</p>
+          <p className="text-xs font-mono text-[#FFA2B0]">-{bet.amount.toFixed(1)}</p>
         )}
       </div>
     </div>
@@ -149,11 +149,11 @@ export default function Portfolio() {
         </Card>
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <TrendingUp className={`w-4 h-4 ${pnl >= 0 ? "text-olive" : "text-brick"}`} />
+            <TrendingUp className={`w-4 h-4 ${pnl >= 0 ? "text-[#90D18D]" : "text-[#FFA2B0]"}`} />
             <CardDescription>PnL</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className={`text-xl font-bold ${pnl >= 0 ? "text-olive" : "text-brick"}`}>
+            <p className={`text-xl font-bold ${pnl >= 0 ? "text-[#90D18D]" : "text-[#FFA2B0]"}`}>
               {pnl >= 0 ? "+" : ""}{pnl.toFixed(1)} TRUST
             </p>
           </CardContent>

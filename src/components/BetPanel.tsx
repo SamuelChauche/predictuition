@@ -39,8 +39,8 @@ export function BetPanel({ market }: { market: Market }) {
             variant={side === "yes" ? "default" : "outline"}
             className={
               side === "yes"
-                ? "bg-olive hover:bg-olive/80 text-black"
-                : "hover:bg-olive/10 hover:text-olive"
+                ? "bg-[#90D18D] hover:bg-[#90D18D]/80 text-black"
+                : "hover:bg-[#90D18D]/10 hover:text-[#90D18D]"
             }
             onClick={() => setSide("yes")}
           >
@@ -51,8 +51,8 @@ export function BetPanel({ market }: { market: Market }) {
             variant={side === "no" ? "default" : "outline"}
             className={
               side === "no"
-                ? "bg-brick hover:bg-brick/80 text-white"
-                : "hover:bg-brick/10 hover:text-brick"
+                ? "bg-[#FFA2B0] hover:bg-[#FFA2B0]/80 text-black"
+                : "hover:bg-[#FFA2B0]/10 hover:text-[#FFA2B0]"
             }
             onClick={() => setSide("no")}
           >
@@ -119,8 +119,8 @@ export function BetPanel({ market }: { market: Market }) {
         <Button
           className={`w-full font-medium ${
             side === "yes"
-              ? "bg-olive hover:bg-olive/80 text-black"
-              : "bg-brick hover:bg-brick/80 text-white"
+              ? "bg-[#90D18D] hover:bg-[#90D18D]/80 text-black"
+              : "bg-[#FFA2B0] hover:bg-[#FFA2B0]/80 text-black"
           }`}
           disabled={parsedAmount <= 0}
         >

@@ -8,12 +8,12 @@ export function PoolBar({ market }: { market: Market }) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm font-medium">
-        <span className="text-olive">{market.yesLabel} {yesPercent}%</span>
-        <span className="text-brick">{market.noLabel} {noPercent}%</span>
+        <span className="text-[#90D18D]">{market.yesLabel} {yesPercent}%</span>
+        <span className="text-[#FFA2B0]">{market.noLabel} {noPercent}%</span>
       </div>
       <div className="flex h-3 rounded-full overflow-hidden">
         <div
-          className="bg-olive transition-all flex items-center justify-center"
+          className="bg-[#90D18D] transition-all flex items-center justify-center"
           style={{ width: `${yesPercent}%` }}
         >
           {yesPercent > 15 && (
@@ -21,7 +21,7 @@ export function PoolBar({ market }: { market: Market }) {
           )}
         </div>
         <div
-          className="bg-brick transition-all flex items-center justify-center"
+          className="bg-[#FFA2B0] transition-all flex items-center justify-center"
           style={{ width: `${noPercent}%` }}
         >
           {noPercent > 15 && (
