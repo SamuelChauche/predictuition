@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Triangle, Wallet, LayoutDashboard, TrendingUp } from "lucide-react";
+import { Triangle, Wallet, LayoutDashboard, TrendingUp, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/market", label: "Market", icon: TrendingUp },
+  { to: "/portfolio", label: "Portfolio", icon: Briefcase },
 ];
 
 export function Sidebar() {

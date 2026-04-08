@@ -6,6 +6,8 @@ import Dashboard from "@/pages/Dashboard";
 import AtomDetail from "@/pages/AtomDetail";
 import TripleDetail from "@/pages/TripleDetail";
 import Market from "@/pages/Market";
+import MarketDetail from "@/pages/MarketDetail";
+import Portfolio from "@/pages/Portfolio";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +38,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/market" element={<Market />} />
+            <Route path="/market/:id" element={<MarketDetail />} />
+            <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/atoms/:id" element={<AtomDetail />} />
             <Route path="/triples/:id" element={<TripleDetail />} />
           </Routes>
