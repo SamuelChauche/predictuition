@@ -1,29 +1,54 @@
 import { useMemo, useState } from "react";
 import type { TimeRange } from "@/lib/timeRange";
 import { timeRangeMs } from "@/lib/timeRange";
-import { useSharePriceHistory } from "./useAtoms";
+import { useSharePriceChart } from "./useAtoms";
 
 export interface ChartPoint {
   date: string;
   price: number;
 }
 
+const intervalMap: Record<TimeRange, string> = {
+  "1h": "5m",
+  "4h": "15m",
+  "1d": "1h",
+  "1w": "6h",
+  "1m": "1d",
+};
+
+function formatDate(iso: string, range: TimeRange): string {
+  const d = new Date(iso);
+  const hour = d.getUTCHours();
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 || 12;
+
+  switch (range) {
+    case "1h":
+    case "4h":
+      return `${h12}:${String(d.getUTCMinutes()).padStart(2, "0")}${ampm}`;
+    case "1d":
+      return `${h12}${ampm}`;
+    case "1w":
+      return `${d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} ${h12}${ampm}`;
+    case "1m":
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  }
+}
+
 export function useFilteredChartData(termId: string | undefined) {
   const [timeRange, setTimeRange] = useState<TimeRange>("1m");
 
   const since = Date.now() - timeRangeMs[timeRange];
-  const priceHistory = useSharePriceHistory(termId, since);
+  const interval = intervalMap[timeRange];
+  const chartQuery = useSharePriceChart(termId, since, interval);
 
   const chartData = useMemo<ChartPoint[]>(() => {
-    if (!priceHistory.data) return [];
-    return priceHistory.data.map((p) => ({
-      date: new Date(Number(p.block_timestamp) * 1000).toLocaleDateString(
-        "en-US",
-        { month: "short", day: "numeric" }
-      ),
-      price: Number(p.share_price) / 1e18,
+    if (!chartQuery.data) return [];
+    return chartQuery.data.map((p) => ({
+      date: formatDate(p.timestamp, timeRange),
+      price: Number(p.value) / 1e18,
     }));
-  }, [priceHistory.data]);
+  }, [chartQuery.data, timeRange]);
 
   return { chartData, timeRange, setTimeRange };
 }

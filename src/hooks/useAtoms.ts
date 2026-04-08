@@ -4,7 +4,7 @@ import {
   TOP_ATOM_VAULTS_BY_SHARE_PRICE,
   TOP_ATOM_VAULTS_BY_POSITION_COUNT,
   ATOM_DETAIL,
-  SHARE_PRICE_HISTORY,
+  SHARE_PRICE_CHART,
 } from "@/lib/queries";
 
 export interface AtomVaultRow {
@@ -88,26 +88,40 @@ export function useAtomDetail(termId: string) {
   });
 }
 
-export interface SharePricePoint {
-  block_timestamp: string;
-  share_price: string;
-  total_assets: string;
-  total_shares: string;
+export interface ChartDataPoint {
+  timestamp: string;
+  value: string;
 }
 
-export function useSharePriceHistory(termId: string | undefined, sinceTimestamp?: number) {
-  const since = sinceTimestamp
-    ? String(Math.floor(sinceTimestamp / 1000))
-    : "0";
+interface ChartResponse {
+  getChartJson: {
+    count: number;
+    interval: string;
+    data: ChartDataPoint[];
+  };
+}
+
+export function useSharePriceChart(
+  termId: string | undefined,
+  startTime: number,
+  interval: string
+) {
+  const endTime = Math.floor(Date.now() / 1000);
+  const start = Math.floor(startTime / 1000);
 
   return useQuery({
-    queryKey: ["sharePriceHistory", termId, since],
+    queryKey: ["sharePriceChart", termId, start, interval],
     queryFn: () =>
-      client.request<{ share_price_changes: SharePricePoint[] }>(
-        SHARE_PRICE_HISTORY,
-        { termId, since }
-      ),
-    select: (data) => data.share_price_changes,
+      client.request<ChartResponse>(SHARE_PRICE_CHART, {
+        input: {
+          term_id: termId,
+          curve_id: "1",
+          start_time: String(start),
+          end_time: String(endTime),
+          interval,
+        },
+      }),
+    select: (data) => data.getChartJson.data,
     enabled: !!termId,
   });
 }
