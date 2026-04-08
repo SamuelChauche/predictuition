@@ -70,7 +70,9 @@ export default function MarketDetail() {
             )}
             <h1 className="text-xl font-bold text-foreground">
               {highlightQuestion(market.question, {
-                atoms: [{ label: market.subjectLabel, termId: market.subjectTermId }],
+                entities: market.tripleLabel && market.tripleTermId
+                  ? [{ label: market.tripleLabel, termId: market.tripleTermId, path: `/triples/${market.tripleTermId}`, kind: "triple" }]
+                  : [{ label: market.subjectLabel, termId: market.subjectTermId, path: `/atoms/${market.subjectTermId}`, kind: "atom" }],
               })}
             </h1>
           </div>

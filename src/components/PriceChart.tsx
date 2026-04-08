@@ -30,8 +30,6 @@ export function PriceChart({
   timeRange,
   onTimeRangeChange,
 }: PriceChartProps) {
-  if (chartData.length === 0) return null;
-
   return (
     <div className="space-y-4">
       <Tabs
@@ -55,34 +53,42 @@ export function PriceChart({
           <CardDescription>TRUST per share</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                stroke="var(--border)"
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                stroke="var(--border)"
-              />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={(value) => [
-                  `${Number(value).toFixed(4)} TRUST`,
-                  "Price",
-                ]}
-              />
-              <Line
-                type="monotone"
-                dataKey="price"
-                stroke="var(--olive)"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
+                  domain={[(dataMin: number) => dataMin * 0.999, (dataMax: number) => dataMax * 1.001]}
+                  tickFormatter={(v: number) => v.toFixed(3)}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(value) => [
+                    `${Number(value).toFixed(4)} TRUST`,
+                    "Price",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="price"
+                  stroke="var(--olive)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">
+              No data for this time range
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

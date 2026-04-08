@@ -203,7 +203,7 @@ export const TRIPLE_DETAIL = gql`
         emoji
       }
     }
-    triple_vault(term_id: $termId) {
+    triple_vault(term_id: $termId, curve_id: 1) {
       term_id
       total_shares
       total_assets

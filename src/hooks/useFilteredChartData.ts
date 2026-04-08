@@ -9,10 +9,10 @@ export interface ChartPoint {
 }
 
 const intervalMap: Record<TimeRange, string> = {
-  "1h": "5m",
-  "4h": "15m",
+  "1h": "1h",
+  "4h": "1h",
   "1d": "1h",
-  "1w": "6h",
+  "1w": "1d",
   "1m": "1d",
 };
 
@@ -38,7 +38,9 @@ function formatDate(iso: string, range: TimeRange): string {
 export function useFilteredChartData(termId: string | undefined) {
   const [timeRange, setTimeRange] = useState<TimeRange>("1m");
 
-  const since = Date.now() - timeRangeMs[timeRange];
+  // Round to nearest minute to avoid queryKey thrashing on every render
+  const now = Math.floor(Date.now() / 60_000) * 60_000;
+  const since = now - timeRangeMs[timeRange];
   const interval = intervalMap[timeRange];
   const chartQuery = useSharePriceChart(termId, since, interval);
 

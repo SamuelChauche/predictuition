@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { client } from "@/lib/client";
 import {
   TOP_ATOM_VAULTS_BY_SHARE_PRICE,
@@ -120,6 +120,7 @@ export function useSharePriceChart(
           end_time: String(endTime),
           interval,
         },
+    placeholderData: keepPreviousData,
       }),
     select: (data) => data.getChartJson.data,
     enabled: !!termId,

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Wallet, Users, Atom } from "lucide-react";
@@ -16,8 +16,13 @@ export function MarketCard({ market }: { market: Market }) {
   const yesPercent = Math.round((market.yesPool / total) * 100);
   const noPercent = 100 - yesPercent;
 
+  const navigate = useNavigate();
+
   return (
-    <Link to={`/market/${market.id}`} className="block">
+    <div
+      className="block cursor-pointer"
+      onClick={() => navigate(`/market/${market.id}`)}
+    >
       <Card className="py-0 gap-0 hover:border-olive/40 transition-all cursor-pointer">
         <CardContent className="p-4 space-y-3">
           {/* Question with inline atom links */}
@@ -31,7 +36,9 @@ export function MarketCard({ market }: { market: Market }) {
             )}
             <p className="text-sm font-semibold text-foreground leading-snug">
               {highlightQuestion(market.question, {
-                atoms: [{ label: market.subjectLabel, termId: market.subjectTermId }],
+                entities: market.tripleLabel && market.tripleTermId
+                  ? [{ label: market.tripleLabel, termId: market.tripleTermId, path: `/triples/${market.tripleTermId}`, kind: "triple" }]
+                  : [{ label: market.subjectLabel, termId: market.subjectTermId, path: `/atoms/${market.subjectTermId}`, kind: "atom" }],
               })}
             </p>
           </div>
@@ -80,6 +87,6 @@ export function MarketCard({ market }: { market: Market }) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }

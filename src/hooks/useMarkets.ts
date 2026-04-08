@@ -73,6 +73,8 @@ export interface Market {
   category: "atoms" | "triples";
   subjectLabel: string;
   subjectTermId: string;
+  tripleLabel?: string;
+  tripleTermId?: string;
 }
 
 function nextDeadline(duration: MarketDuration): number {
@@ -208,7 +210,7 @@ function generateTripleMarkets(vaults: TripleVault[]): Market[] {
       id: `triple-sent-${v.term_id.slice(0, 16)}`,
       type: "sentiment",
       duration,
-      question: `Will "${subLabel} ${predLabel} ${objLabel}" gain more trust in the next ${durationLabel(duration)}?`,
+      question: `Will ${subLabel} ${predLabel} ${objLabel} gain more trust in the next ${durationLabel(duration)}?`,
       description: `Current TVL: ${tvl.toFixed(2)} TRUST, ${v.position_count} positions. Resolves by comparing vault totalAssets.`,
       termId: t.term_id,
       image: t.subject.image,
@@ -223,6 +225,8 @@ function generateTripleMarkets(vaults: TripleVault[]): Market[] {
       category: "triples",
       subjectLabel: subLabel,
       subjectTermId: t.subject.term_id,
+      tripleLabel: `${subLabel} ${predLabel} ${objLabel}`,
+      tripleTermId: t.term_id,
     });
   });
 
