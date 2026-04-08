@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
+import { wagmiConfig } from "@/config/wagmi";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import Dashboard from "@/pages/Dashboard";
@@ -32,19 +34,21 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/market" element={<Market />} />
-            <Route path="/market/:id" element={<MarketDetail />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/atoms/:id" element={<AtomDetail />} />
-            <Route path="/triples/:id" element={<TripleDetail />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/market" element={<Market />} />
+              <Route path="/market/:id" element={<MarketDetail />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/atoms/:id" element={<AtomDetail />} />
+              <Route path="/triples/:id" element={<TripleDetail />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

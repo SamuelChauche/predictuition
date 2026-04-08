@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Triangle, Wallet, LayoutDashboard, TrendingUp, Briefcase } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Triangle, LayoutDashboard, TrendingUp, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConnectButton } from "./ConnectButton";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/market", label: "Market", icon: TrendingUp },
-  { to: "/portfolio", label: "Portfolio", icon: Briefcase },
+  { to: "/portfolio", label: "My Portfolio", icon: Briefcase },
 ];
 
 export function MobileNav() {
@@ -37,9 +37,7 @@ export function MobileNav() {
             </Link>
           );
         })}
-        <Button variant="default" size="sm" className="bg-olive hover:bg-olive/80 text-black font-medium ml-1">
-          <Wallet className="w-4 h-4" />
-        </Button>
+        <ConnectButton compact />
       </div>
     </div>
   );
