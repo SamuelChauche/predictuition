@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, Wallet, Users, Atom } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Wallet, Users, Atom, ExternalLink } from "lucide-react";
 import { CountdownTimer } from "./CountdownTimer";
 import type { Market } from "@/hooks/useMarkets";
 import { highlightQuestion } from "@/lib/highlightQuestion";
@@ -20,29 +20,37 @@ export function MarketCard({ market }: { market: Market }) {
     <Link to={`/market/${market.id}`} className="block">
       <Card className="py-0 gap-0 hover:border-olive/40 transition-all cursor-pointer">
         <CardContent className="p-4 space-y-3">
-          {/* Header */}
-          <div className="flex items-start gap-2">
+          {/* Subject link */}
+          <a
+            href={`https://portal.intuition.systems/app/atom/${market.subjectTermId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 group"
+            onClick={(e) => e.stopPropagation()}
+          >
             {market.image ? (
-              <img
-                src={market.image}
-                alt=""
-                className="w-6 h-6 rounded-full object-cover ring-1 ring-border shrink-0 mt-0.5"
-              />
+              <img src={market.image} alt="" className="w-5 h-5 rounded-full object-cover ring-1 ring-border shrink-0" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-olive/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Atom className="w-3.5 h-3.5 text-olive" />
+              <div className="w-5 h-5 rounded-full bg-olive/20 flex items-center justify-center shrink-0">
+                <Atom className="w-3 h-3 text-olive" />
               </div>
             )}
-            <p className="text-sm font-semibold text-foreground leading-snug">
-              {highlightQuestion(market.question)}
-            </p>
-          </div>
+            <span className="text-sm font-black text-olive group-hover:underline">
+              {market.subjectLabel}
+            </span>
+            <ExternalLink className="w-3 h-3 text-olive/50 group-hover:text-olive" />
+          </a>
+
+          {/* Question */}
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            {highlightQuestion(market.question)}
+          </p>
 
           {/* Progress bar */}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1.5 rounded-full overflow-hidden flex">
               <div className="h-full bg-[#90D18D]" style={{ width: `${yesPercent}%` }} />
-              <div className="h-full bg-[#FFA2B0]" style={{ width: `${noPercent}%` }} />
+              <div className="h-full bg-[#bc4b51]" style={{ width: `${noPercent}%` }} />
             </div>
           </div>
 
@@ -58,7 +66,7 @@ export function MarketCard({ market }: { market: Market }) {
             </Button>
             <Button
               size="sm"
-              className="bg-[#FFA2B0]/15 text-[#FFA2B0] hover:bg-[#FFA2B0]/25 border-0 flex-1 h-8 text-xs"
+              className="bg-[#bc4b51]/15 text-[#bc4b51] hover:bg-[#bc4b51]/25 border-0 flex-1 h-8 text-xs"
               onClick={(e) => e.preventDefault()}
             >
               <ThumbsDown className="w-3 h-3 mr-1" />

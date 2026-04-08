@@ -71,6 +71,8 @@ export interface Market {
   noPool: number;
   deadline: number;
   category: "atoms" | "triples";
+  subjectLabel: string;
+  subjectTermId: string;
 }
 
 function nextDeadline(duration: MarketDuration): number {
@@ -177,6 +179,8 @@ function generateAtomMarkets(vaults: AtomVault[]): Market[] {
       noPool,
       deadline: nextDeadline(duration),
       category: "atoms",
+      subjectLabel: label,
+      subjectTermId: atom.term_id,
     });
   });
 
@@ -217,6 +221,8 @@ function generateTripleMarkets(vaults: TripleVault[]): Market[] {
       noPool,
       deadline: nextDeadline(duration),
       category: "triples",
+      subjectLabel: subLabel,
+      subjectTermId: t.subject.term_id,
     });
   });
 

@@ -9,7 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield } from "lucide-react";
+import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield, ExternalLink } from "lucide-react";
 import { highlightQuestion } from "@/lib/highlightQuestion";
 import { useMarket } from "@/hooks/useMarkets";
 import { useSharePriceHistory } from "@/hooks/useAtoms";
@@ -62,7 +62,12 @@ export default function MarketDetail() {
           </Button>
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <a
+            href={`https://portal.intuition.systems/app/atom/${market.subjectTermId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mb-2 group"
+          >
             {market.image ? (
               <img
                 src={market.image}
@@ -74,11 +79,15 @@ export default function MarketDetail() {
                 <Atom className="w-4 h-4 text-olive" />
               </div>
             )}
-            <h1 className="text-xl font-bold text-foreground">
-              {highlightQuestion(market.question)}
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground">{market.description}</p>
+            <span className="text-lg font-black text-olive group-hover:underline">
+              {market.subjectLabel}
+            </span>
+            <ExternalLink className="w-4 h-4 text-olive/60 group-hover:text-olive" />
+          </a>
+          <h1 className="text-xl font-bold text-foreground">
+            {highlightQuestion(market.question)}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{market.description}</p>
         </div>
       </div>
 

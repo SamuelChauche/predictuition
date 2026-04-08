@@ -51,8 +51,8 @@ export function BetPanel({ market }: { market: Market }) {
             variant={side === "no" ? "default" : "outline"}
             className={
               side === "no"
-                ? "bg-[#FFA2B0] hover:bg-[#FFA2B0]/80 text-black"
-                : "hover:bg-[#FFA2B0]/10 hover:text-[#FFA2B0]"
+                ? "bg-[#bc4b51] hover:bg-[#bc4b51]/80 text-black"
+                : "hover:bg-[#bc4b51]/10 hover:text-[#bc4b51]"
             }
             onClick={() => setSide("no")}
           >
@@ -120,7 +120,7 @@ export function BetPanel({ market }: { market: Market }) {
           className={`w-full font-medium ${
             side === "yes"
               ? "bg-[#90D18D] hover:bg-[#90D18D]/80 text-black"
-              : "bg-[#FFA2B0] hover:bg-[#FFA2B0]/80 text-black"
+              : "bg-[#bc4b51] hover:bg-[#bc4b51]/80 text-black"
           }`}
           disabled={parsedAmount <= 0}
         >

@@ -16,7 +16,7 @@ export function highlightQuestion(question: string): React.ReactNode {
     if (negativeWords.test(part)) {
       negativeWords.lastIndex = 0;
       return (
-        <span key={i} style={{ color: "#FFA2B0" }} className="font-black">
+        <span key={i} style={{ color: "#bc4b51" }} className="font-black">
           {part}
         </span>
       );
