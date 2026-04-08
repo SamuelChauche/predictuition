@@ -2,6 +2,8 @@ export function formatEth(wei: string): string {
   const eth = Number(wei) / 1e18;
   if (eth === 0) return "0 TRUST";
   if (eth < 0.0001) return "<0.0001 TRUST";
+  if (eth >= 1e6) return `${(eth / 1e6).toFixed(1)}M TRUST`;
+  if (eth >= 1e3) return `${(eth / 1e3).toFixed(1)}K TRUST`;
   return `${eth.toFixed(4)} TRUST`;
 }
 

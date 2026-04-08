@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,6 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   LineChart,
   Line,
@@ -40,10 +41,7 @@ import {
   Atom,
 } from "lucide-react";
 import { useTripleDetail } from "@/hooks/useTriples";
-import {
-  useSharePriceHistory,
-  usePositionChangeDaily,
-} from "@/hooks/useAtoms";
+import { useSharePriceHistory } from "@/hooks/useAtoms";
 import {
   formatEth,
   formatSharePrice,
@@ -75,41 +73,41 @@ function AtomLink({ atom }: { atom: TripleAtomRef }) {
   );
 }
 
+type TimeRange = "1h" | "4h" | "1d" | "1w" | "1m";
+
+const timeRangeMs: Record<TimeRange, number> = {
+  "1h": 3_600_000,
+  "4h": 14_400_000,
+  "1d": 86_400_000,
+  "1w": 604_800_000,
+  "1m": 2_592_000_000,
+};
+
 export default function TripleDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useTripleDetail(id!);
   const priceHistory = useSharePriceHistory(id);
-  const positionHistory = usePositionChangeDaily(id);
+  const [timeRange, setTimeRange] = useState<TimeRange>("1m");
 
   const triple = data?.triple;
   const vault = data?.triple_vault;
   const positions = data?.positions?.slice(0, 10);
 
-  const priceChartData = useMemo(() => {
+  const chartData = useMemo(() => {
     if (!priceHistory.data) return [];
-    return priceHistory.data.map((p) => ({
+    const now = Date.now();
+    const cutoff = now - timeRangeMs[timeRange];
+    const filtered = priceHistory.data.filter(
+      (p) => Number(p.block_timestamp) * 1000 >= cutoff
+    );
+    return filtered.map((p) => ({
       date: new Date(Number(p.block_timestamp) * 1000).toLocaleDateString(
         "en-US",
         { month: "short", day: "numeric" }
       ),
       price: Number(p.share_price) / 1e18,
     }));
-  }, [priceHistory.data]);
-
-  const positionChartData = useMemo(() => {
-    if (!positionHistory.data) return [];
-    let cumulative = 0;
-    return positionHistory.data.map((p) => {
-      cumulative += p.transaction_count;
-      return {
-        date: new Date(p.bucket).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        positions: cumulative,
-      };
-    });
-  }, [positionHistory.data]);
+  }, [priceHistory.data, timeRange]);
 
   if (isLoading) {
     return (
@@ -137,6 +135,13 @@ export default function TripleDetail() {
       </Alert>
     );
   }
+
+  const tooltipStyle = {
+    backgroundColor: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: "8px",
+    color: "var(--foreground)",
+  };
 
   return (
     <div className="space-y-6">
@@ -224,11 +229,21 @@ export default function TripleDetail() {
         </div>
       )}
 
-      {/* Share Price Chart */}
-      {priceChartData.length > 1 && (
+      {/* Charts */}
+      {priceHistory.data && priceHistory.data.length > 1 && (
+        <div className="space-y-4">
+          <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+            <TabsList>
+              <TabsTrigger value="1h">1H</TabsTrigger>
+              <TabsTrigger value="4h">4H</TabsTrigger>
+              <TabsTrigger value="1d">1D</TabsTrigger>
+              <TabsTrigger value="1w">1W</TabsTrigger>
+              <TabsTrigger value="1m">1M</TabsTrigger>
+            </TabsList>
+          </Tabs>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="w-5 h-5 text-olive" />
               Share Price Over Time
             </CardTitle>
@@ -236,24 +251,19 @@ export default function TripleDetail() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={priceChartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   stroke="var(--border)"
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   stroke="var(--border)"
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
+                  contentStyle={tooltipStyle}
                   formatter={(value) => [
                     `${Number(value).toFixed(4)} TRUST`,
                     "Price",
@@ -270,54 +280,7 @@ export default function TripleDetail() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
-
-      {/* Positions Over Time */}
-      {positionChartData.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-teal" />
-              Positions Over Time
-            </CardTitle>
-            <CardDescription>Cumulative position activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={positionChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                  stroke="var(--border)"
-                />
-                <YAxis
-                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                  stroke="var(--border)"
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value) => [
-                    formatNumber(Number(value)),
-                    "Positions",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="positions"
-                  stroke="var(--teal)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       {/* Positions Table */}

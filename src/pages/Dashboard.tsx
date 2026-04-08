@@ -181,135 +181,130 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Atoms Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <Atom className="w-5 h-5 text-olive" />
-              Top 10 Atoms
-            </CardTitle>
-            <Tabs
-              value={atomSort}
-              onValueChange={(v) => setAtomSort(v as SortMode)}
-            >
-              <TabsList>
-                <TabsTrigger value="sharePrice">Share Price</TabsTrigger>
-                <TabsTrigger value="positionCount">Trust Count</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {atoms.isLoading && <LoadingTable />}
-          {atoms.error && (
-            <Alert variant="destructive">
-              <AlertDescription>Failed to load atoms.</AlertDescription>
-            </Alert>
-          )}
-          {atoms.data && (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">#</TableHead>
-                    <TableHead>Atom</TableHead>
-                    <TableHead className="text-right">Share Price (TRUST)</TableHead>
-                    <TableHead className="text-right">Positions</TableHead>
-                    <TableHead className="text-right">Total Assets</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {atoms.data.map((row, i) => (
-                    <TableRow key={row.term_id}>
-                      <TableCell className="text-muted-foreground font-mono">
-                        {i + 1}
-                      </TableCell>
-                      <TableCell>
-                        <AtomLabel row={row} />
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-olive">
-                        {formatSharePrice(row.current_share_price)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatNumber(row.position_count)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-teal">
-                        {formatEth(row.total_assets)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      {/* Atoms + Triples side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Atoms Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Atom className="w-5 h-5 text-olive" />
+                Top 10 Atoms
+              </CardTitle>
+              <Tabs
+                value={atomSort}
+                onValueChange={(v) => setAtomSort(v as SortMode)}
+              >
+                <TabsList>
+                  <TabsTrigger value="sharePrice">Share</TabsTrigger>
+                  <TabsTrigger value="positionCount">Trust</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {atoms.isLoading && <LoadingTable />}
+            {atoms.error && (
+              <Alert variant="destructive">
+                <AlertDescription>Failed to load atoms.</AlertDescription>
+              </Alert>
+            )}
+            {atoms.data && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8">#</TableHead>
+                      <TableHead>Atom</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Pos.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {atoms.data.map((row, i) => (
+                      <TableRow key={row.term_id}>
+                        <TableCell className="text-muted-foreground font-mono text-xs">
+                          {i + 1}
+                        </TableCell>
+                        <TableCell>
+                          <AtomLabel row={row} />
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-olive text-sm">
+                          {formatSharePrice(row.current_share_price)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">
+                          {formatNumber(row.position_count)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Triples Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <Triangle className="w-5 h-5 text-teal" />
-              Top 10 Triples
-            </CardTitle>
-            <Tabs
-              value={tripleSort}
-              onValueChange={(v) => setTripleSort(v as SortMode)}
-            >
-              <TabsList>
-                <TabsTrigger value="sharePrice">Share Price</TabsTrigger>
-                <TabsTrigger value="positionCount">Trust Count</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {triples.isLoading && <LoadingTable />}
-          {triples.error && (
-            <Alert variant="destructive">
-              <AlertDescription>Failed to load triples.</AlertDescription>
-            </Alert>
-          )}
-          {triples.data && (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">#</TableHead>
-                    <TableHead>Triple</TableHead>
-                    <TableHead className="text-right">Share Price (TRUST)</TableHead>
-                    <TableHead className="text-right">Positions</TableHead>
-                    <TableHead className="text-right">Total Assets</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {triples.data.map((row, i) => (
-                    <TableRow key={row.term_id}>
-                      <TableCell className="text-muted-foreground font-mono">
-                        {i + 1}
-                      </TableCell>
-                      <TableCell>
-                        <TripleLabel row={row} />
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-olive">
-                        {formatSharePrice(row.current_share_price)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatNumber(row.position_count)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-teal">
-                        {formatEth(row.total_assets)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        {/* Triples Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Triangle className="w-5 h-5 text-teal" />
+                Top 10 Triples
+              </CardTitle>
+              <Tabs
+                value={tripleSort}
+                onValueChange={(v) => setTripleSort(v as SortMode)}
+              >
+                <TabsList>
+                  <TabsTrigger value="sharePrice">Share</TabsTrigger>
+                  <TabsTrigger value="positionCount">Trust</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {triples.isLoading && <LoadingTable />}
+            {triples.error && (
+              <Alert variant="destructive">
+                <AlertDescription>Failed to load triples.</AlertDescription>
+              </Alert>
+            )}
+            {triples.data && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8">#</TableHead>
+                      <TableHead>Triple</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Pos.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {triples.data.map((row, i) => (
+                      <TableRow key={row.term_id}>
+                        <TableCell className="text-muted-foreground font-mono text-xs">
+                          {i + 1}
+                        </TableCell>
+                        <TableCell>
+                          <TripleLabel row={row} />
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-olive text-sm">
+                          {formatSharePrice(row.current_share_price)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">
+                          {formatNumber(row.position_count)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

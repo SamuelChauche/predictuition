@@ -5,7 +5,6 @@ import {
   TOP_ATOM_VAULTS_BY_POSITION_COUNT,
   ATOM_DETAIL,
   SHARE_PRICE_HISTORY,
-  POSITION_CHANGE_DAILY,
 } from "@/lib/queries";
 
 export interface AtomVaultRow {
@@ -102,28 +101,10 @@ export function useSharePriceHistory(termId: string | undefined) {
     queryFn: () =>
       client.request<{ share_price_changes: SharePricePoint[] }>(
         SHARE_PRICE_HISTORY,
-        { termId, limit: 500 }
-      ),
-    select: (data) => data.share_price_changes,
-    enabled: !!termId,
-  });
-}
-
-export interface PositionChangeDailyPoint {
-  bucket: string;
-  transaction_count: number;
-  shares_delta_period: string;
-}
-
-export function usePositionChangeDaily(termId: string | undefined) {
-  return useQuery({
-    queryKey: ["positionChangeDaily", termId],
-    queryFn: () =>
-      client.request<{ position_change_daily: PositionChangeDailyPoint[] }>(
-        POSITION_CHANGE_DAILY,
         { termId }
       ),
-    select: (data) => data.position_change_daily,
+    select: (data) => [...data.share_price_changes].reverse(),
     enabled: !!termId,
   });
 }
+

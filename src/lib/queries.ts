@@ -255,11 +255,11 @@ export const RECENT_SIGNALS = gql`
 // ── Share Price History (for detail charts) ──
 
 export const SHARE_PRICE_HISTORY = gql`
-  query SharePriceHistory($termId: String!, $limit: Int!) {
+  query SharePriceHistory($termId: String!) {
     share_price_changes(
       where: { term_id: { _eq: $termId } }
-      order_by: { block_timestamp: asc }
-      limit: $limit
+      order_by: { block_timestamp: desc }
+      limit: 10000
     ) {
       block_timestamp
       share_price
