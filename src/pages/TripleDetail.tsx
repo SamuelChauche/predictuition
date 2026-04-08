@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Triangle, Atom, User, Calendar } from "lucide-react";
 import { useTripleDetail } from "@/hooks/useTriples";
-import { useSharePriceHistory } from "@/hooks/useAtoms";
 import { useFilteredChartData } from "@/hooks/useFilteredChartData";
 import { shortenAddress, formatDate } from "@/lib/format";
 import { PriceChart } from "@/components/PriceChart";
@@ -39,8 +38,7 @@ function AtomLink({ atom }: { atom: TripleAtomRef }) {
 export default function TripleDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useTripleDetail(id!);
-  const priceHistory = useSharePriceHistory(id);
-  const { chartData, timeRange, setTimeRange } = useFilteredChartData(priceHistory.data);
+  const { chartData, timeRange, setTimeRange } = useFilteredChartData(id);
 
   const triple = data?.triple;
   const vault = data?.triple_vault;
@@ -128,7 +126,6 @@ export default function TripleDetail() {
       )}
 
       <PriceChart
-        rawData={priceHistory.data}
         chartData={chartData}
         timeRange={timeRange}
         onTimeRangeChange={setTimeRange}

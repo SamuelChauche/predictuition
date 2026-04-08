@@ -95,15 +95,19 @@ export interface SharePricePoint {
   total_shares: string;
 }
 
-export function useSharePriceHistory(termId: string | undefined) {
+export function useSharePriceHistory(termId: string | undefined, sinceTimestamp?: number) {
+  const since = sinceTimestamp
+    ? String(Math.floor(sinceTimestamp / 1000))
+    : "0";
+
   return useQuery({
-    queryKey: ["sharePriceHistory", termId],
+    queryKey: ["sharePriceHistory", termId, since],
     queryFn: () =>
       client.request<{ share_price_changes: SharePricePoint[] }>(
         SHARE_PRICE_HISTORY,
-        { termId }
+        { termId, since }
       ),
-    select: (data) => [...data.share_price_changes].reverse(),
+    select: (data) => data.share_price_changes,
     enabled: !!termId,
   });
 }

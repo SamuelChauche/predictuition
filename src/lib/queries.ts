@@ -243,11 +243,11 @@ export const PROTOCOL_STATS = gql`
 // ── Share Price History (for detail charts) ──
 
 export const SHARE_PRICE_HISTORY = gql`
-  query SharePriceHistory($termId: String!) {
+  query SharePriceHistory($termId: String!, $since: String!) {
     share_price_changes(
-      where: { term_id: { _eq: $termId } }
-      order_by: { block_timestamp: desc }
-      limit: 10000
+      where: { term_id: { _eq: $termId }, block_timestamp: { _gte: $since } }
+      order_by: { block_timestamp: asc }
+      limit: 100
     ) {
       block_timestamp
       share_price

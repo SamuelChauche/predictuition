@@ -19,22 +19,18 @@ import { TrendingUp } from "lucide-react";
 import type { TimeRange } from "@/lib/timeRange";
 import { tooltipStyle } from "@/lib/timeRange";
 import type { ChartPoint } from "@/hooks/useFilteredChartData";
-import type { SharePricePoint } from "@/hooks/useAtoms";
-
 interface PriceChartProps {
-  rawData: SharePricePoint[] | undefined;
   chartData: ChartPoint[];
   timeRange: TimeRange;
   onTimeRangeChange: (range: TimeRange) => void;
 }
 
 export function PriceChart({
-  rawData,
   chartData,
   timeRange,
   onTimeRangeChange,
 }: PriceChartProps) {
-  if (!rawData || rawData.length <= 1) return null;
+  if (chartData.length === 0) return null;
 
   return (
     <div className="space-y-4">

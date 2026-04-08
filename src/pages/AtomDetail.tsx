@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Atom, User, Calendar } from "lucide-react";
-import { useAtomDetail, useSharePriceHistory } from "@/hooks/useAtoms";
+import { useAtomDetail } from "@/hooks/useAtoms";
 import { useFilteredChartData } from "@/hooks/useFilteredChartData";
 import { shortenAddress, formatDate } from "@/lib/format";
 import { getAtomTypeIcon } from "@/components/AtomTypeIcon";
@@ -14,8 +14,7 @@ import { VaultStats } from "@/components/VaultStats";
 export default function AtomDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useAtomDetail(id!);
-  const priceHistory = useSharePriceHistory(id);
-  const { chartData, timeRange, setTimeRange } = useFilteredChartData(priceHistory.data);
+  const { chartData, timeRange, setTimeRange } = useFilteredChartData(id);
 
   const atom = data?.atom;
   const vault = data?.vaults?.[0];
@@ -94,7 +93,6 @@ export default function AtomDetail() {
       )}
 
       <PriceChart
-        rawData={priceHistory.data}
         chartData={chartData}
         timeRange={timeRange}
         onTimeRangeChange={setTimeRange}

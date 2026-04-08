@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield } from "lucide-react";
 import { highlightQuestion } from "@/lib/highlightQuestion";
 import { useMarket } from "@/hooks/useMarkets";
-import { useSharePriceHistory } from "@/hooks/useAtoms";
 import { useFilteredChartData } from "@/hooks/useFilteredChartData";
 import { PriceChart } from "@/components/PriceChart";
 import { BetPanel } from "@/components/BetPanel";
@@ -22,8 +21,7 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 export default function MarketDetail() {
   const { id } = useParams<{ id: string }>();
   const { market, isLoading, error } = useMarket(id!);
-  const priceHistory = useSharePriceHistory(market?.termId);
-  const { chartData, timeRange, setTimeRange } = useFilteredChartData(priceHistory.data);
+  const { chartData, timeRange, setTimeRange } = useFilteredChartData(market?.termId);
 
   if (isLoading) {
     return (
@@ -140,7 +138,6 @@ export default function MarketDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <PriceChart
-            rawData={priceHistory.data}
             chartData={chartData}
             timeRange={timeRange}
             onTimeRangeChange={setTimeRange}
