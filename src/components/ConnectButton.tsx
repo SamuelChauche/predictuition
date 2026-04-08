@@ -1,4 +1,5 @@
-import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -9,11 +10,10 @@ function shortenAddr(addr: string): string {
 
 export function ConnectButton({ compact = false }: { compact?: boolean }) {
   const { address, isConnected } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { login, logout, authenticated, ready } = usePrivy();
   const [hovered, setHovered] = useState(false);
 
-  if (isConnected && address) {
+  if (isConnected && authenticated && address) {
     return (
       <Button
         variant="outline"
@@ -21,7 +21,7 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
         className={`${compact ? "" : "w-full"} ${hovered ? "border-brick/50 text-brick" : ""}`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => disconnect()}
+        onClick={() => logout()}
       >
         {hovered ? (
           <>
@@ -43,14 +43,11 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
       variant="default"
       size="sm"
       className={`bg-olive hover:bg-olive/80 text-black font-medium ${compact ? "" : "w-full"}`}
-      disabled={isPending}
-      onClick={() => {
-        const connector = connectors[0];
-        if (connector) connect({ connector });
-      }}
+      disabled={!ready}
+      onClick={() => login()}
     >
       <Wallet className="w-4 h-4 mr-1" />
-      {isPending ? "Connecting..." : compact ? "" : "Connect Wallet"}
+      {!ready ? "Loading..." : compact ? "" : "Connect Wallet"}
     </Button>
   );
 }

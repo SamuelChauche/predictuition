@@ -1,10 +1,9 @@
-import { http, createConfig } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { http } from "wagmi";
+import { createConfig } from "@privy-io/wagmi";
 import { intuitionMainnet } from "./chains";
 
 export const wagmiConfig = createConfig({
   chains: [intuitionMainnet],
-  connectors: [injected()],
   transports: {
     [intuitionMainnet.id]: http(),
   },
