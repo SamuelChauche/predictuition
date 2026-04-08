@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -16,23 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Atom,
-  Triangle,
-  Users,
-  Signal,
-  Wallet,
-  TrendingUp,
-  Hash,
-  ImageIcon,
-  Tag,
-  User,
-  FileText,
-  Link as LinkIcon,
-  Box,
-} from "lucide-react";
+import { Atom, Triangle, Users, Signal, Wallet, TrendingUp } from "lucide-react";
 import {
   useTopAtomsBySharePrice,
   useTopAtomsByPositionCount,
@@ -43,87 +26,12 @@ import {
 } from "@/hooks/useTriples";
 import { useProtocolStats } from "@/hooks/useStats";
 import { formatSharePrice, formatNumber, formatEth, formatCompact } from "@/lib/format";
-import type { AtomVaultRow } from "@/hooks/useAtoms";
-import type { TripleVaultRow } from "@/hooks/useTriples";
+import { StatCard } from "@/components/StatCard";
+import { AtomLabel } from "@/components/AtomLabel";
+import { TripleLabel } from "@/components/TripleLabel";
+import { LoadingTable } from "@/components/LoadingTable";
 
 type SortMode = "sharePrice" | "positionCount";
-
-const atomTypeIcons: Record<string, React.ReactNode> = {
-  Account: <User className="w-3.5 h-3.5" />,
-  Thing: <Box className="w-3.5 h-3.5" />,
-  TextObject: <FileText className="w-3.5 h-3.5" />,
-  ImageObject: <ImageIcon className="w-3.5 h-3.5" />,
-  Organization: <Users className="w-3.5 h-3.5" />,
-  Person: <User className="w-3.5 h-3.5" />,
-  URL: <LinkIcon className="w-3.5 h-3.5" />,
-};
-
-function AtomTypeIcon({ type }: { type: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs text-teal bg-teal/10 px-1.5 py-0.5 rounded-md font-medium">
-      {atomTypeIcons[type] || <Hash className="w-3.5 h-3.5" />}
-      {type}
-    </span>
-  );
-}
-
-function AtomLabel({ row }: { row: AtomVaultRow }) {
-  const atom = row.term.atom;
-  return (
-    <Link
-      to={`/atoms/${atom.term_id}`}
-      className="flex items-center gap-2 hover:underline"
-    >
-      {atom.image ? (
-        <img
-          src={atom.image}
-          alt=""
-          className="w-6 h-6 rounded-full object-cover ring-1 ring-border"
-        />
-      ) : (
-        <div className="w-6 h-6 rounded-full bg-olive/20 flex items-center justify-center">
-          <Atom className="w-3.5 h-3.5 text-olive" />
-        </div>
-      )}
-      <span className="truncate max-w-[200px] text-foreground font-medium">
-        {atom.label || "Atom"}
-      </span>
-      <AtomTypeIcon type={atom.type} />
-    </Link>
-  );
-}
-
-function TripleLabel({ row }: { row: TripleVaultRow }) {
-  const t = row.term.triple;
-  return (
-    <Link
-      to={`/triples/${t.term_id}`}
-      className="flex items-center gap-1.5 hover:underline flex-wrap"
-    >
-      <span className="truncate max-w-[120px] text-olive font-medium">
-        {t.subject.label || `#${t.subject.term_id.slice(0, 8)}`}
-      </span>
-      <Tag className="w-3.5 h-3.5 text-sandy shrink-0" />
-      <span className="truncate max-w-[120px] text-sandy">
-        {t.predicate.label || `#${t.predicate.term_id.slice(0, 8)}`}
-      </span>
-      <TrendingUp className="w-3.5 h-3.5 text-teal shrink-0" />
-      <span className="truncate max-w-[120px] text-teal font-medium">
-        {t.object.label || `#${t.object.term_id.slice(0, 8)}`}
-      </span>
-    </Link>
-  );
-}
-
-function LoadingTable() {
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-10 w-full" />
-      ))}
-    </div>
-  );
-}
 
 const statConfig = [
   { label: "Atoms", key: "total_atoms" as const, icon: Atom, color: "text-olive" },
@@ -154,36 +62,26 @@ export default function Dashboard() {
           {statConfig.map((s) => {
             const Icon = s.icon;
             return (
-              <Card key={s.label}>
-                <CardHeader className="pb-2 flex flex-row items-center gap-2">
-                  <Icon className={`w-4 h-4 ${s.color}`} />
-                  <CardDescription>{s.label}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">
-                    {formatCompact(stats.data[s.key])}
-                  </p>
-                </CardContent>
-              </Card>
+              <StatCard
+                key={s.label}
+                icon={<Icon className={`w-4 h-4 ${s.color}`} />}
+                label={s.label}
+                compact={formatCompact(stats.data[s.key])}
+                full={formatNumber(stats.data[s.key])}
+              />
             );
           })}
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center gap-2">
-              <Wallet className="w-4 h-4 text-olive" />
-              <CardDescription>TVL</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">
-                {formatEth(stats.data.contract_balance)}
-              </p>
-            </CardContent>
-          </Card>
+          <StatCard
+            icon={<Wallet className="w-4 h-4 text-olive" />}
+            label="TVL"
+            compact={formatEth(stats.data.contract_balance)}
+            full={formatEth(stats.data.contract_balance)}
+          />
         </div>
       )}
 
       {/* Atoms + Triples side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Atoms Table */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -191,10 +89,7 @@ export default function Dashboard() {
                 <Atom className="w-5 h-5 text-olive" />
                 Top 10 Atoms
               </CardTitle>
-              <Tabs
-                value={atomSort}
-                onValueChange={(v) => setAtomSort(v as SortMode)}
-              >
+              <Tabs value={atomSort} onValueChange={(v) => setAtomSort(v as SortMode)}>
                 <TabsList>
                   <TabsTrigger value="sharePrice">Share</TabsTrigger>
                   <TabsTrigger value="positionCount">Trust</TabsTrigger>
@@ -223,18 +118,10 @@ export default function Dashboard() {
                   <TableBody>
                     {atoms.data.map((row, i) => (
                       <TableRow key={row.term_id}>
-                        <TableCell className="text-muted-foreground font-mono text-xs">
-                          {i + 1}
-                        </TableCell>
-                        <TableCell>
-                          <AtomLabel row={row} />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-olive text-sm">
-                          {formatSharePrice(row.current_share_price)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatNumber(row.position_count)}
-                        </TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-xs">{i + 1}</TableCell>
+                        <TableCell><AtomLabel row={row} /></TableCell>
+                        <TableCell className="text-right font-mono text-olive text-sm">{formatSharePrice(row.current_share_price)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{formatNumber(row.position_count)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -244,7 +131,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Triples Table */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -252,10 +138,7 @@ export default function Dashboard() {
                 <Triangle className="w-5 h-5 text-teal" />
                 Top 10 Triples
               </CardTitle>
-              <Tabs
-                value={tripleSort}
-                onValueChange={(v) => setTripleSort(v as SortMode)}
-              >
+              <Tabs value={tripleSort} onValueChange={(v) => setTripleSort(v as SortMode)}>
                 <TabsList>
                   <TabsTrigger value="sharePrice">Share</TabsTrigger>
                   <TabsTrigger value="positionCount">Trust</TabsTrigger>
@@ -284,18 +167,10 @@ export default function Dashboard() {
                   <TableBody>
                     {triples.data.map((row, i) => (
                       <TableRow key={row.term_id}>
-                        <TableCell className="text-muted-foreground font-mono text-xs">
-                          {i + 1}
-                        </TableCell>
-                        <TableCell>
-                          <TripleLabel row={row} />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-olive text-sm">
-                          {formatSharePrice(row.current_share_price)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatNumber(row.position_count)}
-                        </TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-xs">{i + 1}</TableCell>
+                        <TableCell><TripleLabel row={row} /></TableCell>
+                        <TableCell className="text-right font-mono text-olive text-sm">{formatSharePrice(row.current_share_price)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{formatNumber(row.position_count)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

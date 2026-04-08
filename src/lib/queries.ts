@@ -240,18 +240,6 @@ export const PROTOCOL_STATS = gql`
   }
 `;
 
-// ── Activity Chart: Recent Signals ──
-
-export const RECENT_SIGNALS = gql`
-  query RecentSignals($limit: Int!) {
-    signals(limit: $limit, order_by: { created_at: desc }) {
-      id
-      created_at
-      delta
-    }
-  }
-`;
-
 // ── Share Price History (for detail charts) ──
 
 export const SHARE_PRICE_HISTORY = gql`
@@ -269,17 +257,3 @@ export const SHARE_PRICE_HISTORY = gql`
   }
 `;
 
-// ── Position Changes (for detail charts) ──
-
-export const POSITION_CHANGE_DAILY = gql`
-  query PositionChangeDaily($termId: String!) {
-    position_change_daily(
-      where: { term_id: { _eq: $termId } }
-      order_by: { bucket: asc }
-    ) {
-      bucket
-      transaction_count
-      shares_delta_period
-    }
-  }
-`;
