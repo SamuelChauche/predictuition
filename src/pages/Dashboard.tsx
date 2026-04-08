@@ -18,16 +18,21 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  Atom,
+  Triangle,
+  Users,
+  Signal,
+  Wallet,
+  TrendingUp,
+  Hash,
+  ImageIcon,
+  Tag,
+  User,
+  FileText,
+  Link as LinkIcon,
+  Box,
+} from "lucide-react";
 import {
   useTopAtomsBySharePrice,
   useTopAtomsByPositionCount,
@@ -36,12 +41,31 @@ import {
   useTopTriplesBySharePrice,
   useTopTriplesByPositionCount,
 } from "@/hooks/useTriples";
-import { useProtocolStats, useActivityChart } from "@/hooks/useStats";
-import { formatSharePrice, formatNumber, formatEth } from "@/lib/format";
+import { useProtocolStats } from "@/hooks/useStats";
+import { formatSharePrice, formatNumber, formatEth, formatCompact } from "@/lib/format";
 import type { AtomVaultRow } from "@/hooks/useAtoms";
 import type { TripleVaultRow } from "@/hooks/useTriples";
 
 type SortMode = "sharePrice" | "positionCount";
+
+const atomTypeIcons: Record<string, React.ReactNode> = {
+  Account: <User className="w-3.5 h-3.5" />,
+  Thing: <Box className="w-3.5 h-3.5" />,
+  TextObject: <FileText className="w-3.5 h-3.5" />,
+  ImageObject: <ImageIcon className="w-3.5 h-3.5" />,
+  Organization: <Users className="w-3.5 h-3.5" />,
+  Person: <User className="w-3.5 h-3.5" />,
+  URL: <LinkIcon className="w-3.5 h-3.5" />,
+};
+
+function AtomTypeIcon({ type }: { type: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-teal bg-teal/10 px-1.5 py-0.5 rounded-md font-medium">
+      {atomTypeIcons[type] || <Hash className="w-3.5 h-3.5" />}
+      {type}
+    </span>
+  );
+}
 
 function AtomLabel({ row }: { row: AtomVaultRow }) {
   const atom = row.term.atom;
@@ -50,20 +74,21 @@ function AtomLabel({ row }: { row: AtomVaultRow }) {
       to={`/atoms/${atom.term_id}`}
       className="flex items-center gap-2 hover:underline"
     >
-      {atom.emoji && <span>{atom.emoji}</span>}
-      {atom.image && (
+      {atom.image ? (
         <img
           src={atom.image}
           alt=""
-          className="w-6 h-6 rounded-full object-cover"
+          className="w-6 h-6 rounded-full object-cover ring-1 ring-border"
         />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-olive/20 flex items-center justify-center">
+          <Atom className="w-3.5 h-3.5 text-olive" />
+        </div>
       )}
-      <span className="truncate max-w-[200px]">
-        {atom.label || `Atom`}
+      <span className="truncate max-w-[200px] text-foreground font-medium">
+        {atom.label || "Atom"}
       </span>
-      <Badge variant="outline" className="text-xs shrink-0">
-        {atom.type}
-      </Badge>
+      <AtomTypeIcon type={atom.type} />
     </Link>
   );
 }
@@ -73,18 +98,18 @@ function TripleLabel({ row }: { row: TripleVaultRow }) {
   return (
     <Link
       to={`/triples/${t.term_id}`}
-      className="flex items-center gap-1 hover:underline flex-wrap"
+      className="flex items-center gap-1.5 hover:underline flex-wrap"
     >
-      <span className="truncate max-w-[120px] text-primary">
-        {t.subject.emoji} {t.subject.label || `#${t.subject.term_id.slice(0, 8)}`}
+      <span className="truncate max-w-[120px] text-olive font-medium">
+        {t.subject.label || `#${t.subject.term_id.slice(0, 8)}`}
       </span>
-      <span className="text-muted-foreground mx-1">→</span>
-      <span className="truncate max-w-[120px] text-muted-foreground">
-        {t.predicate.emoji} {t.predicate.label || `#${t.predicate.term_id.slice(0, 8)}`}
+      <Tag className="w-3.5 h-3.5 text-sandy shrink-0" />
+      <span className="truncate max-w-[120px] text-sandy">
+        {t.predicate.label || `#${t.predicate.term_id.slice(0, 8)}`}
       </span>
-      <span className="text-muted-foreground mx-1">→</span>
-      <span className="truncate max-w-[120px] text-primary">
-        {t.object.emoji} {t.object.label || `#${t.object.term_id.slice(0, 8)}`}
+      <TrendingUp className="w-3.5 h-3.5 text-teal shrink-0" />
+      <span className="truncate max-w-[120px] text-teal font-medium">
+        {t.object.label || `#${t.object.term_id.slice(0, 8)}`}
       </span>
     </Link>
   );
@@ -100,6 +125,14 @@ function LoadingTable() {
   );
 }
 
+const statConfig = [
+  { label: "Atoms", key: "total_atoms" as const, icon: Atom, color: "text-olive" },
+  { label: "Triples", key: "total_triples" as const, icon: Triangle, color: "text-teal" },
+  { label: "Positions", key: "total_positions" as const, icon: TrendingUp, color: "text-sandy" },
+  { label: "Signals", key: "total_signals" as const, icon: Signal, color: "text-gold" },
+  { label: "Accounts", key: "total_accounts" as const, icon: Users, color: "text-brick" },
+] as const;
+
 export default function Dashboard() {
   const [atomSort, setAtomSort] = useState<SortMode>("sharePrice");
   const [tripleSort, setTripleSort] = useState<SortMode>("sharePrice");
@@ -109,7 +142,6 @@ export default function Dashboard() {
   const triplesByPrice = useTopTriplesBySharePrice(10);
   const triplesByCount = useTopTriplesByPositionCount(10);
   const stats = useProtocolStats();
-  const activity = useActivityChart();
 
   const atoms = atomSort === "sharePrice" ? atomsByPrice : atomsByCount;
   const triples = tripleSort === "sharePrice" ? triplesByPrice : triplesByCount;
@@ -119,23 +151,33 @@ export default function Dashboard() {
       {/* Protocol Stats */}
       {stats.data && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[
-            { label: "Atoms", value: formatNumber(stats.data.total_atoms) },
-            { label: "Triples", value: formatNumber(stats.data.total_triples) },
-            { label: "Positions", value: formatNumber(stats.data.total_positions) },
-            { label: "Signals", value: formatNumber(stats.data.total_signals) },
-            { label: "Accounts", value: formatNumber(stats.data.total_accounts) },
-            { label: "TVL", value: formatEth(stats.data.contract_balance) },
-          ].map((s) => (
-            <Card key={s.label}>
-              <CardHeader className="pb-2">
-                <CardDescription>{s.label}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{s.value}</p>
-              </CardContent>
-            </Card>
-          ))}
+          {statConfig.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Card key={s.label}>
+                <CardHeader className="pb-2 flex flex-row items-center gap-2">
+                  <Icon className={`w-4 h-4 ${s.color}`} />
+                  <CardDescription>{s.label}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">
+                    {formatCompact(stats.data[s.key])}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center gap-2">
+              <Wallet className="w-4 h-4 text-olive" />
+              <CardDescription>TVL</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">
+                {formatEth(stats.data.contract_balance)}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -143,7 +185,10 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle>Top 10 Atoms</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Atom className="w-5 h-5 text-olive" />
+              Top 10 Atoms
+            </CardTitle>
             <Tabs
               value={atomSort}
               onValueChange={(v) => setAtomSort(v as SortMode)}
@@ -169,7 +214,7 @@ export default function Dashboard() {
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Atom</TableHead>
-                    <TableHead className="text-right">Share Price (ETH)</TableHead>
+                    <TableHead className="text-right">Share Price (TRUST)</TableHead>
                     <TableHead className="text-right">Positions</TableHead>
                     <TableHead className="text-right">Total Assets</TableHead>
                   </TableRow>
@@ -177,19 +222,19 @@ export default function Dashboard() {
                 <TableBody>
                   {atoms.data.map((row, i) => (
                     <TableRow key={row.term_id}>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-mono">
                         {i + 1}
                       </TableCell>
                       <TableCell>
                         <AtomLabel row={row} />
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-olive">
                         {formatSharePrice(row.current_share_price)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right font-mono">
                         {formatNumber(row.position_count)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-teal">
                         {formatEth(row.total_assets)}
                       </TableCell>
                     </TableRow>
@@ -205,7 +250,10 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle>Top 10 Triples</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Triangle className="w-5 h-5 text-teal" />
+              Top 10 Triples
+            </CardTitle>
             <Tabs
               value={tripleSort}
               onValueChange={(v) => setTripleSort(v as SortMode)}
@@ -231,7 +279,7 @@ export default function Dashboard() {
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Triple</TableHead>
-                    <TableHead className="text-right">Share Price (ETH)</TableHead>
+                    <TableHead className="text-right">Share Price (TRUST)</TableHead>
                     <TableHead className="text-right">Positions</TableHead>
                     <TableHead className="text-right">Total Assets</TableHead>
                   </TableRow>
@@ -239,19 +287,19 @@ export default function Dashboard() {
                 <TableBody>
                   {triples.data.map((row, i) => (
                     <TableRow key={row.term_id}>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-mono">
                         {i + 1}
                       </TableCell>
                       <TableCell>
                         <TripleLabel row={row} />
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-olive">
                         {formatSharePrice(row.current_share_price)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right font-mono">
                         {formatNumber(row.position_count)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-teal">
                         {formatEth(row.total_assets)}
                       </TableCell>
                     </TableRow>
@@ -259,51 +307,6 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Activity Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Signals per day</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activity.isLoading && <Skeleton className="h-[300px] w-full" />}
-          {activity.error && (
-            <Alert variant="destructive">
-              <AlertDescription>Failed to load activity.</AlertDescription>
-            </Alert>
-          )}
-          {activity.data && activity.data.length > 0 && (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={activity.data}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  fill="var(--primary)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
           )}
         </CardContent>
       </Card>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Triangle } from "lucide-react";
 import Dashboard from "@/pages/Dashboard";
 import AtomDetail from "@/pages/AtomDetail";
 import TripleDetail from "@/pages/TripleDetail";
@@ -18,8 +19,10 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-tight">
-            Predictuition
+          <Link to="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Triangle className="w-6 h-6 text-olive" />
+            <span className="text-foreground">Predict</span>
+            <span className="text-olive">uition</span>
           </Link>
           <span className="text-sm text-muted-foreground">
             Intuition Protocol Explorer

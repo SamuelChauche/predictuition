@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   LineChart,
@@ -29,6 +28,21 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
+  ArrowLeft,
+  Atom,
+  Wallet,
+  TrendingUp,
+  Coins,
+  Users,
+  User,
+  FileText,
+  ImageIcon,
+  Hash,
+  Box,
+  Link as LinkIcon,
+  Calendar,
+} from "lucide-react";
+import {
   useAtomDetail,
   useSharePriceHistory,
   usePositionChangeDaily,
@@ -38,7 +52,18 @@ import {
   formatSharePrice,
   formatNumber,
   shortenAddress,
+  formatDate,
 } from "@/lib/format";
+
+const atomTypeIcons: Record<string, React.ReactNode> = {
+  Account: <User className="w-4 h-4" />,
+  Thing: <Box className="w-4 h-4" />,
+  TextObject: <FileText className="w-4 h-4" />,
+  ImageObject: <ImageIcon className="w-4 h-4" />,
+  Organization: <Users className="w-4 h-4" />,
+  Person: <User className="w-4 h-4" />,
+  URL: <LinkIcon className="w-4 h-4" />,
+};
 
 export default function AtomDetail() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +73,7 @@ export default function AtomDetail() {
 
   const atom = data?.atom;
   const vault = data?.vaults?.[0];
-  const positions = data?.positions;
+  const positions = data?.positions?.slice(0, 10);
 
   const priceChartData = useMemo(() => {
     if (!priceHistory.data) return [];
@@ -80,7 +105,11 @@ export default function AtomDetail() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[200px] w-full" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
         <Skeleton className="h-[300px] w-full" />
       </div>
     );
@@ -101,112 +130,120 @@ export default function AtomDetail() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/">
-          <Button variant="outline" size="sm">Back</Button>
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
         </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          {atom.emoji && <span className="text-3xl">{atom.emoji}</span>}
-          {atom.image && (
+        <div className="flex items-center gap-3">
+          {atom.image ? (
             <img
               src={atom.image}
               alt=""
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-olive/30"
             />
-          )}
-          {atom.label || "Atom"}
-          <Badge variant="outline">{atom.type}</Badge>
-        </h1>
-      </div>
-
-      {/* Metadata + Vault Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">ID</span>
-              <span className="font-mono text-xs truncate max-w-[200px]">
-                {atom.term_id}
-              </span>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-olive/20 flex items-center justify-center">
+              <Atom className="w-5 h-5 text-olive" />
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Creator</span>
-              <span className="font-mono">
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {atom.label || "Atom"}
+            </h1>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1 text-teal">
+                {atomTypeIcons[atom.type] || <Hash className="w-3.5 h-3.5" />}
+                {atom.type}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <User className="w-3.5 h-3.5" />
                 {shortenAddress(atom.creator_id)}
               </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Created</span>
-              <span>
-                {new Date(atom.created_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" />
+                {formatDate(atom.created_at)}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Type</span>
-              <span>{atom.type}</span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
 
-        {vault && (
+      {/* Vault Stats Cards */}
+      {vault && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Vault Stats</CardTitle>
+            <CardHeader className="pb-2 flex flex-row items-center gap-2">
+              <Wallet className="w-4 h-4 text-olive" />
+              <CardDescription>Total Assets</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Assets</span>
-                <span className="font-mono">
-                  {formatEth(vault.total_assets)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Share Price</span>
-                <span className="font-mono">
-                  {formatSharePrice(vault.current_share_price)} ETH
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Shares</span>
-                <span className="font-mono">
-                  {formatNumber(vault.total_shares)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Positions</span>
-                <span>{formatNumber(vault.position_count)}</span>
-              </div>
+            <CardContent>
+              <p className="text-xl font-bold text-olive">
+                {formatEth(vault.total_assets)}
+              </p>
             </CardContent>
           </Card>
-        )}
-      </div>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-teal" />
+              <CardDescription>Share Price</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold text-teal">
+                {formatSharePrice(vault.current_share_price)} TRUST
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center gap-2">
+              <Coins className="w-4 h-4 text-sandy" />
+              <CardDescription>Total Shares</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold text-sandy">
+                {formatSharePrice(vault.total_shares)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center gap-2">
+              <Users className="w-4 h-4 text-gold" />
+              <CardDescription>Positions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold text-gold">
+                {formatNumber(vault.position_count)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Share Price Chart */}
       {priceChartData.length > 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Share Price Over Time</CardTitle>
-            <CardDescription>ETH per share</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-olive" />
+              Share Price Over Time
+            </CardTitle>
+            <CardDescription>TRUST per share</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={priceChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
                 />
                 <Tooltip
                   contentStyle={{
@@ -216,14 +253,14 @@ export default function AtomDetail() {
                     color: "var(--foreground)",
                   }}
                   formatter={(value) => [
-                    `${Number(value).toFixed(4)} ETH`,
+                    `${Number(value).toFixed(4)} TRUST`,
                     "Price",
                   ]}
                 />
                 <Line
                   type="monotone"
                   dataKey="price"
-                  stroke="var(--primary)"
+                  stroke="var(--olive)"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -237,21 +274,24 @@ export default function AtomDetail() {
       {positionChartData.length > 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Positions Over Time</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-teal" />
+              Positions Over Time
+            </CardTitle>
             <CardDescription>Cumulative position activity</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={positionChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
-                  className="fill-muted-foreground"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  stroke="var(--border)"
                 />
                 <Tooltip
                   contentStyle={{
@@ -260,11 +300,15 @@ export default function AtomDetail() {
                     borderRadius: "8px",
                     color: "var(--foreground)",
                   }}
+                  formatter={(value) => [
+                    formatNumber(Number(value)),
+                    "Positions",
+                  ]}
                 />
                 <Line
                   type="monotone"
                   dataKey="positions"
-                  stroke="var(--chart-2)"
+                  stroke="var(--teal)"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -277,10 +321,13 @@ export default function AtomDetail() {
       {/* Positions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Positions</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-sandy" />
+            Top Positions
+          </CardTitle>
           {vault && (
             <CardDescription>
-              {formatNumber(vault.position_count)} total positions
+              {formatNumber(vault.position_count)} total positions (showing top 10)
             </CardDescription>
           )}
         </CardHeader>
@@ -298,13 +345,13 @@ export default function AtomDetail() {
                 <TableBody>
                   {positions.map((pos, i) => (
                     <TableRow key={pos.id}>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-mono">
                         {i + 1}
                       </TableCell>
                       <TableCell className="font-mono">
                         {pos.account.label || shortenAddress(pos.account.id)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono text-olive">
                         {formatSharePrice(pos.shares)}
                       </TableCell>
                     </TableRow>
