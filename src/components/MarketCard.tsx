@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, Wallet, Users, Atom, ExternalLink } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Wallet, Users, Atom } from "lucide-react";
 import { CountdownTimer } from "./CountdownTimer";
 import type { Market } from "@/hooks/useMarkets";
 import { highlightQuestion } from "@/lib/highlightQuestion";
@@ -20,31 +20,21 @@ export function MarketCard({ market }: { market: Market }) {
     <Link to={`/market/${market.id}`} className="block">
       <Card className="py-0 gap-0 hover:border-olive/40 transition-all cursor-pointer">
         <CardContent className="p-4 space-y-3">
-          {/* Subject link */}
-          <a
-            href={`https://portal.intuition.systems/app/atom/${market.subjectTermId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 group"
-            onClick={(e) => e.stopPropagation()}
-          >
+          {/* Question with inline atom links */}
+          <div className="flex items-start gap-2">
             {market.image ? (
-              <img src={market.image} alt="" className="w-5 h-5 rounded-full object-cover ring-1 ring-border shrink-0" />
+              <img src={market.image} alt="" className="w-5 h-5 rounded-full object-cover ring-1 ring-border shrink-0 mt-0.5" />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-olive/20 flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded-full bg-olive/20 flex items-center justify-center shrink-0 mt-0.5">
                 <Atom className="w-3 h-3 text-olive" />
               </div>
             )}
-            <span className="text-sm font-black text-olive group-hover:underline">
-              {market.subjectLabel}
-            </span>
-            <ExternalLink className="w-3 h-3 text-olive/50 group-hover:text-olive" />
-          </a>
-
-          {/* Question */}
-          <p className="text-sm font-semibold text-foreground leading-snug">
-            {highlightQuestion(market.question)}
-          </p>
+            <p className="text-sm font-semibold text-foreground leading-snug">
+              {highlightQuestion(market.question, {
+                atoms: [{ label: market.subjectLabel, termId: market.subjectTermId }],
+              })}
+            </p>
+          </div>
 
           {/* Progress bar */}
           <div className="flex items-center gap-2">

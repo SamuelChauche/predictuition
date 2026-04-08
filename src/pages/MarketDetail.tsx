@@ -9,7 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield, ExternalLink } from "lucide-react";
+import { ArrowLeft, Atom, Users, Wallet, TrendingUp, Shield } from "lucide-react";
 import { highlightQuestion } from "@/lib/highlightQuestion";
 import { useMarket } from "@/hooks/useMarkets";
 import { useSharePriceHistory } from "@/hooks/useAtoms";
@@ -62,32 +62,21 @@ export default function MarketDetail() {
           </Button>
         </Link>
         <div className="flex-1">
-          <a
-            href={`https://portal.intuition.systems/app/atom/${market.subjectTermId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mb-2 group"
-          >
+          <div className="flex items-center gap-2 mb-2">
             {market.image ? (
-              <img
-                src={market.image}
-                alt=""
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-olive/30"
-              />
+              <img src={market.image} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-olive/30" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-olive/20 flex items-center justify-center">
                 <Atom className="w-4 h-4 text-olive" />
               </div>
             )}
-            <span className="text-lg font-black text-olive group-hover:underline">
-              {market.subjectLabel}
-            </span>
-            <ExternalLink className="w-4 h-4 text-olive/60 group-hover:text-olive" />
-          </a>
-          <h1 className="text-xl font-bold text-foreground">
-            {highlightQuestion(market.question)}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{market.description}</p>
+            <h1 className="text-xl font-bold text-foreground">
+              {highlightQuestion(market.question, {
+                atoms: [{ label: market.subjectLabel, termId: market.subjectTermId }],
+              })}
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground">{market.description}</p>
         </div>
       </div>
 
