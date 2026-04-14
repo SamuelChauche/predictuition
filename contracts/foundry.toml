@@ -1,0 +1,27 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+
+solc = "0.8.24"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 10_000
+bytecode_hash = "none"
+auto_detect_solc = false
+extra_output = ["storageLayout"]
+
+fs_permissions = [{ access = "read", path = "./"}]
+
+[fuzz]
+runs = 256
+
+[profile.ci]
+fuzz = { runs = 10_000 }
+verbosity = 3
+
+[rpc_endpoints]
+intuition_mainnet = "https://rpc.intuition.systems/http"
+intuition_testnet = "https://testnet.rpc.intuition.systems/http"

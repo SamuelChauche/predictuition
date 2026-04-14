@@ -24,3 +24,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Foundry contracts
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+contracts/.env
+contracts/.env.*
+!contracts/.env.example
