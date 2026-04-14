@@ -79,7 +79,7 @@ query TopTriples($limit: Int!) {
 ```
 
 RPC endpoint (pour les lectures on-chain directes) : `https://rpc.intuition.systems/http`
-MultiVault address : `0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e`
+MultiVault address : `<TBD — à injecter via env au deploy>`
 Chain ID : `1155`
 
 ### Phase 2 — Intégration du Prediction Market
@@ -268,7 +268,7 @@ src/
 4. Ajouter le système de templates de questions
 5. Implémenter Option A (pool cappé) ou Option B (TWAP + pas de cap)
 6. Ajouter early exit avec pénalité
-7. Tester sur Intuition testnet (chain 13579, MultiVault `0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91`)
+7. Tester sur Intuition testnet (chain 13579, MultiVault adresse à injecter via env)
 8. Déployer sur Intuition mainnet (chain 1155)
 
 ### Étape 3 — Intégration frontend PM
@@ -304,7 +304,7 @@ export const intuitionTestnet = defineChain({
 })
 
 // config/contracts.ts
-export const MULTIVAULT_ADDRESS = '0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e' as const
+export const MULTIVAULT_ADDRESS = import.meta.env.VITE_MULTIVAULT_ADDRESS as `0x${string}`
 export const DEFAULT_CURVE_ID = 1n
 export const GRAPHQL_ENDPOINT = 'https://mainnet.intuition.sh/v1/graphql'
 ```
