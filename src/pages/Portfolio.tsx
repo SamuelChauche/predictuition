@@ -5,9 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Wallet, TrendingUp, TrendingDown, Clock, Trophy, User, Link as LinkIcon } from "lucide-react";
-import { useWalletInfo } from "@/components/ConnectButton";
-import { ConnectButton } from "@/components/ConnectButton";
+import { Wallet, TrendingUp, TrendingDown, Clock, Trophy } from "lucide-react";
 
 interface MockBet {
   id: string;
@@ -99,7 +97,6 @@ function BetRow({ bet }: { bet: MockBet }) {
 }
 
 export default function Portfolio() {
-  const wallet = useWalletInfo();
   const activeBets = mockBets.filter((b) => b.status === "active");
   const resolvedBets = mockBets.filter((b) => b.status !== "active");
   const totalStaked = activeBets.reduce((s, b) => s + b.amount, 0);
@@ -119,44 +116,6 @@ export default function Portfolio() {
           Your positions and betting history.
         </p>
       </div>
-
-      {/* Wallet Info */}
-      {wallet.isConnected && wallet.address ? (
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#734BBD]/20 flex items-center justify-center">
-                  <User className="w-5 h-5" style={{ color: "#734BBD" }} />
-                </div>
-                <div>
-                  <p className="font-mono text-sm font-bold text-foreground">{wallet.shortAddress}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="inline-flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3" />
-                      {wallet.chainName} (chain {wallet.chainId})
-                    </span>
-                    {wallet.balance && (
-                      <span className="inline-flex items-center gap-1">
-                        <Wallet className="w-3 h-3" />
-                        {wallet.balance}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-5 flex flex-col items-center gap-3 py-8">
-            <Wallet className="w-8 h-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Connect your wallet to see your positions</p>
-            <ConnectButton />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

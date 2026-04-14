@@ -1,9 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { WagmiProvider } from "@privy-io/wagmi";
-import { wagmiConfig } from "@/config/wagmi";
-import { intuitionMainnet } from "@/config/chains";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import Dashboard from "@/pages/Dashboard";
@@ -36,31 +32,19 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <PrivyProvider
-      appId={import.meta.env.VITE_PRIVY_APP_ID}
-      config={{
-        appearance: { theme: "dark" },
-        defaultChain: intuitionMainnet,
-        supportedChains: [intuitionMainnet],
-        embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" } },
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
-          <BrowserRouter>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/market" element={<Market />} />
-                <Route path="/market/:id" element={<MarketDetail />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/atoms/:id" element={<AtomDetail />} />
-                <Route path="/triples/:id" element={<TripleDetail />} />
-              </Routes>
-            </Layout>
-          </BrowserRouter>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProvider>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/market" element={<Market />} />
+            <Route path="/market/:id" element={<MarketDetail />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/atoms/:id" element={<AtomDetail />} />
+            <Route path="/triples/:id" element={<TripleDetail />} />
+          </Routes>
+        </Layout>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }

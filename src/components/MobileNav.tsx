@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Triangle, LayoutDashboard, TrendingUp, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ConnectButton } from "./ConnectButton";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -37,7 +36,6 @@ export function MobileNav() {
             </Link>
           );
         })}
-        <ConnectButton compact />
       </div>
     </div>
   );
