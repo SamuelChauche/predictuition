@@ -59,7 +59,7 @@ interface IEthMultiVault {
         returns (bool);
 
     /// @notice Teste si un termId a été créé sur Intuition.
-    /// @dev    Selector à vérifier on-chain avant déploiement.
+    /// @dev    Vérifié : selector 0xf5719008 ✓ (testnet chain 13579 + mainnet chain 1155)
     function isTermCreated(bytes32 termId)
         external view
         returns (bool);

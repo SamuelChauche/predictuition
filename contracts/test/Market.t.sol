@@ -100,9 +100,9 @@ contract MarketTest is Test {
     uint8 constant TRIPLE_RATIO = 5;
     uint8 constant TRIPLE_FLIP  = 6;
 
-    // Fixed block offsets (block.number = 1 in Foundry by default)
-    uint256 constant LOCK_BLOCK     = 101;
-    uint256 constant DEADLINE_BLOCK = 201;
+    // Fixed timestamp offsets (block.timestamp = 1 in Foundry by default)
+    uint256 constant LOCK_TS     = 101;
+    uint256 constant DEADLINE_TS = 201;
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -114,8 +114,8 @@ contract MarketTest is Test {
             TARGET_ID,
             CURVE_ID,
             targetValue,
-            DEADLINE_BLOCK,
-            LOCK_BLOCK,
+            DEADLINE_TS,
+            LOCK_TS,
             MIN_VOLUME,
             PROTOCOL_FEE_BPS,
             STAKER_DIVIDEND_BPS,
@@ -130,7 +130,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 2 ether}(false);
 
         vault.setVault(vaultAboveTarget ? 2 ether : 0.5 ether, 1000e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(resolver);
         m.resolve();
     }
@@ -197,7 +197,7 @@ contract MarketTest is Test {
     }
 
     function test_RevertWhen_BetAtLockTime() public {
-        vm.roll(LOCK_BLOCK);
+        vm.warp(LOCK_TS);
         vm.prank(alice);
         vm.expectRevert("Marche verrouille");
         market.bet{value: 1 ether}(true);
@@ -222,7 +222,7 @@ contract MarketTest is Test {
     function test_RevertWhen_BetInRefundMode() public {
         // Same: post-deadline block.number > lockTime fires before the refundMode check.
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         vm.prank(carol);
@@ -260,7 +260,7 @@ contract MarketTest is Test {
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
         vault.setVault(2 ether, 1000e18); // 2 ether >= 1 ether → YES
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         assertTrue(market.resolved());
@@ -272,7 +272,7 @@ contract MarketTest is Test {
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
         vault.setVault(0.5 ether, 1000e18); // 0.5 ether < 1 ether → NO
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         assertTrue(market.resolved());
@@ -285,7 +285,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setVault(0.5 ether, 1000e18); // 0.5 ether < 1 ether → YES
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertTrue(m.outcome());
@@ -297,7 +297,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setVault(2 ether, 1000e18); // 2 ether >= 1 ether → NO
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertFalse(m.outcome());
@@ -309,7 +309,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setSharePrice(2 ether); // 2 ether >= 1 ether → YES
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertTrue(m.outcome());
@@ -321,7 +321,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setSharePrice(0.5 ether); // 0.5 ether < 1 ether → NO
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertFalse(m.outcome());
@@ -333,7 +333,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setSharePrice(0.5 ether); // 0.5 ether < 1 ether → YES
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertTrue(m.outcome());
@@ -347,7 +347,7 @@ contract MarketTest is Test {
 
         vault.setVault(3 ether, 1000e18);  // for = 3 ether
         vault.setCounter(1 ether, 100e18); // against = 1 ether → ratio = 75% → YES
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertTrue(m.outcome());
@@ -360,7 +360,7 @@ contract MarketTest is Test {
 
         vault.setVault(1 ether, 1000e18);  // for = 1 ether
         vault.setCounter(1 ether, 100e18); // against = 1 ether → ratio = 50% < 75% → NO
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertFalse(m.outcome());
@@ -373,7 +373,7 @@ contract MarketTest is Test {
 
         vault.setVault(0, 0);
         vault.setCounter(0, 0); // total = 0 → false
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertFalse(m.outcome());
@@ -387,7 +387,7 @@ contract MarketTest is Test {
         Market m = new Market(
             address(vault), address(this), TRIPLE_FLIP,
             TARGET_ID, CURVE_ID, 0,
-            DEADLINE_BLOCK, LOCK_BLOCK, MIN_VOLUME,
+            DEADLINE_TS, LOCK_TS, MIN_VOLUME,
             PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
         );
 
@@ -397,7 +397,7 @@ contract MarketTest is Test {
         // Flip: against becomes majority
         vault.setVault(0.5 ether, 1000e18);
         vault.setCounter(2 ether, 100e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertTrue(m.outcome()); // flip happened → YES
@@ -410,7 +410,7 @@ contract MarketTest is Test {
         Market m = new Market(
             address(vault), address(this), TRIPLE_FLIP,
             TARGET_ID, CURVE_ID, 0,
-            DEADLINE_BLOCK, LOCK_BLOCK, MIN_VOLUME,
+            DEADLINE_TS, LOCK_TS, MIN_VOLUME,
             PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
         );
 
@@ -420,7 +420,7 @@ contract MarketTest is Test {
         // No flip: for still majority
         vault.setVault(3 ether, 1000e18);
         vault.setCounter(1 ether, 100e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         m.resolve();
 
         assertFalse(m.outcome()); // no flip → NO
@@ -444,7 +444,7 @@ contract MarketTest is Test {
 
     function test_RevertWhen_ResolveInRefundMode() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve(); // activates refundMode
 
         vm.expectRevert("Mode remboursement");
@@ -464,7 +464,7 @@ contract MarketTest is Test {
         uint256 resBefore = resolver.balance;
 
         vault.setVault(2 ether, 1000e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(resolver);
         market.resolve();
 
@@ -483,7 +483,7 @@ contract MarketTest is Test {
     function test_ResolveActivatesRefundWhenVolumeLow() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true); // below 0.5 ether
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         assertTrue(market.refundMode());
@@ -495,7 +495,7 @@ contract MarketTest is Test {
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
         vault.setVault(2 ether, 1000e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
 
         // Check only outcome (data); pool and resolverPay vary with fees.
         vm.expectEmit(false, false, false, true);
@@ -526,7 +526,7 @@ contract MarketTest is Test {
         vm.prank(bob);   market.bet{value: 2 ether}(false);
 
         vault.setVault(2 ether, 1000e18); // YES wins
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         uint256 remaining = market.remainingPoolAfterFees();
@@ -587,7 +587,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         uint256 before = alice.balance;
@@ -609,7 +609,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
         vault.setVault(2 ether, 1000e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         vm.startPrank(alice);
@@ -624,7 +624,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
         vault.setVault(2 ether, 1000e18);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         vm.prank(alice);
@@ -641,7 +641,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 0.1 ether}(false);
 
         uint256 before = alice.balance;
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(alice);
         market.emergencyRefund();
 
@@ -652,7 +652,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 0.2 ether}(true);
         vm.prank(alice); market.bet{value: 0.1 ether}(false);
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(alice);
         market.emergencyRefund();
 
@@ -663,7 +663,7 @@ contract MarketTest is Test {
     function test_EmergencyRefundSetsRefundMode() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(alice);
         market.emergencyRefund();
 
@@ -690,7 +690,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false); // 2 ether > MIN_VOLUME
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.prank(alice);
         vm.expectRevert("Volume suffisant, appelle resolve()");
         market.emergencyRefund();
@@ -699,7 +699,7 @@ contract MarketTest is Test {
     function test_EmergencyRefundEmitsEvent() public {
         vm.prank(alice); market.bet{value: 0.2 ether}(true);
 
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         vm.expectEmit(true, false, false, true);
         emit Refunded(alice, 0.2 ether);
 
@@ -721,7 +721,7 @@ contract MarketTest is Test {
 
     function test_ReceiveRejectsEthInRefundMode() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve(); // activates refundMode
 
         vm.prank(carol);
@@ -737,20 +737,20 @@ contract MarketTest is Test {
         vm.expectRevert("Deadline <= lockTime");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
-            LOCK_BLOCK,     // deadline == lockTime
-            LOCK_BLOCK,
+            LOCK_TS,        // deadline == lockTime
+            LOCK_TS,
             MIN_VOLUME, PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
         );
     }
 
     function test_RevertWhen_LockTimeInPast() public {
-        vm.roll(150); // block.number = 150 > LOCK_BLOCK (101)
+        vm.warp(150); // block.timestamp = 150 > LOCK_TS (101)
 
         vm.expectRevert("LockTime dans le passe");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
             300, // deadline
-            100, // lockTime < block.number
+            100, // lockTime < block.timestamp
             MIN_VOLUME, PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
         );
     }
@@ -759,7 +759,7 @@ contract MarketTest is Test {
         vm.expectRevert("Fees > 30%");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
-            DEADLINE_BLOCK, LOCK_BLOCK, MIN_VOLUME,
+            DEADLINE_TS, LOCK_TS, MIN_VOLUME,
             2000, // protocol 20%
             1001, // dividend 10.01% → total > 30%
             RESOLVER_REWARD, feeCollector
@@ -772,7 +772,7 @@ contract MarketTest is Test {
             address(vault), address(this),
             7, // invalid
             TARGET_ID, CURVE_ID, TARGET_VALUE,
-            DEADLINE_BLOCK, LOCK_BLOCK, MIN_VOLUME,
+            DEADLINE_TS, LOCK_TS, MIN_VOLUME,
             PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
         );
     }
@@ -809,7 +809,7 @@ contract MarketTest is Test {
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
         vault.setVault(2 ether, 1000e18); // YES wins
-        vm.roll(DEADLINE_BLOCK);
+        vm.warp(DEADLINE_TS);
         market.resolve();
 
         uint256 remaining = market.remainingPoolAfterFees();

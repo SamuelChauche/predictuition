@@ -27,8 +27,8 @@ contract Market {
     bytes32        public immutable targetId;      // termId Intuition (bytes32, pas uint256)
     uint256        public immutable curveId;       // bonding curve ID (1 sur mainnet)
     uint256        public immutable targetValue;   // seuil en wei ou en bps
-    uint256        public immutable deadline;      // block number de résolution
-    uint256        public immutable lockTime;      // block number de fermeture des paris
+    uint256        public immutable deadline;      // timestamp (seconds) de résolution
+    uint256        public immutable lockTime;      // timestamp (seconds) de fermeture des paris
     uint256        public immutable minVolume;
     uint256        public immutable protocolFeeBps;
     uint256        public immutable stakerDividendBps;
@@ -94,7 +94,7 @@ contract Market {
         address _feeCollector
     ) {
         require(_deadline > _lockTime,       "Deadline <= lockTime");
-        require(_lockTime > block.number,    "LockTime dans le passe");
+        require(_lockTime > block.timestamp,  "LockTime dans le passe");
         require(_protocolFeeBps + _stakerDividendBps <= 3000, "Fees > 30%");
         require(_conditionType >= 1 && _conditionType <= 6,   "ConditionType invalide");
 
@@ -126,7 +126,7 @@ contract Market {
     // ─── Betting ──────────────────────────────────────────────────────────────
 
     function bet(bool _yes) external payable {
-        require(block.number < lockTime, "Marche verrouille");
+        require(block.timestamp < lockTime, "Marche verrouille");
         require(!resolved,   "Deja resolu");
         require(!refundMode, "Mode remboursement");
         require(msg.value > 0, "Montant nul");
@@ -158,7 +158,7 @@ contract Market {
     /// @notice Résout le marché en lisant Intuition on-chain.
     ///         N'importe qui peut appeler après la deadline — le resolver est récompensé.
     function resolve() external {
-        require(block.number >= deadline, "Trop tot");
+        require(block.timestamp >= deadline, "Trop tot");
         require(!resolved,   "Deja resolu");
         require(!refundMode, "Mode remboursement");
 
@@ -260,7 +260,7 @@ contract Market {
 
     /// @notice Remboursement intégral si volume < minVolume après deadline.
     function emergencyRefund() external {
-        require(block.number >= deadline, "Trop tot");
+        require(block.timestamp >= deadline, "Trop tot");
         require(!resolved, "Deja resolu");
 
         if (!refundMode) {

@@ -66,8 +66,8 @@ contract MarketFactory {
     /// @param _conditionType  Type de condition (voir constantes Market.sol)
     /// @param _targetId       bytes32 termId de l'atom ou triple sur Intuition
     /// @param _targetValue    Seuil : wei pour TVL/PRICE, bps pour RATIO
-    /// @param _deadline       Block number de résolution
-    /// @param _lockBuffer     Blocks avant deadline où les paris sont fermés
+    /// @param _deadline       Timestamp (seconds) de résolution
+    /// @param _lockBuffer     Secondes avant deadline où les paris sont fermés
     function createMarket(
         uint8   _conditionType,
         bytes32 _targetId,
@@ -76,8 +76,8 @@ contract MarketFactory {
         uint256 _lockBuffer
     ) external payable returns (address) {
         require(msg.value >= creationBond,                 "Bond insuffisant");
-        require(_deadline > block.number + _lockBuffer,    "Deadline trop courte");
-        require(_lockBuffer < _deadline - block.number,    "Buffer trop grand");
+        require(_deadline > block.timestamp + _lockBuffer,  "Deadline trop courte");
+        require(_lockBuffer < _deadline - block.timestamp, "Buffer trop grand");
 
         // Vérifie que le term existe sur Intuition
         require(intuition.isTermCreated(_targetId), "Term inconnu sur Intuition");

@@ -7,9 +7,13 @@ optimizer = true
 optimizer_runs = 200
 via_ir = true
 
+[fuzz]
+runs = 1000
+
 [rpc_endpoints]
-intuition = "https://rpc.intuition.systems/http"
-intuition_testnet = "https://rpc-testnet.intuition.systems/http"
+intuition         = "https://rpc.intuition.systems/http"
+intuition_testnet = "https://testnet.rpc.intuition.systems"
 
 [etherscan]
-intuition = { key = "${ETHERSCAN_API_KEY}", url = "https://explorer.intuition.systems/api" }
+intuition         = { key = "placeholder", url = "https://explorer.intuition.systems/api" }
+intuition_testnet = { key = "placeholder", url = "https://testnet.explorer.intuition.systems/api" }
