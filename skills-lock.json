@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "ethskills": {
+      "source": "austintgriffith/ethskills",
+      "sourceType": "github",
+      "computedHash": "8088ccfc5c602a00357207b28f7bcd05ddf0ac86633e88a0d47c61e8fa2742ab"
+    },
+    "intuition": {
+      "source": "0xintuition/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5afb8934fdc7487256d59bd7bafdc7b0a334310fcd90f45aca180c24e8c7a5e3"
+    }
+  }
+}

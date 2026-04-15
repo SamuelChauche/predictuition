@@ -1,11 +1,13 @@
 import { GraphQLClient } from "graphql-request";
 
-const endpoint = import.meta.env.VITE_SUBGRAPH_URL;
+const testnetEndpoint = import.meta.env.VITE_SUBGRAPH_URL_TESTNET;
+const mainnetEndpoint = import.meta.env.VITE_SUBGRAPH_URL;
 
-if (!endpoint || endpoint === "your_endpoint_here") {
-  console.warn(
-    "VITE_SUBGRAPH_URL is not set. Please set it in your .env file."
-  );
-}
+if (!testnetEndpoint) console.warn("VITE_SUBGRAPH_URL_TESTNET is not set.");
 
-export const client = new GraphQLClient(endpoint);
+// Testnet — default client for the whole app (chain 13579)
+export const client = new GraphQLClient(testnetEndpoint);
+export const testnetClient = client;
+
+// Mainnet — kept as reference, not used
+export const mainnetClient = new GraphQLClient(mainnetEndpoint);

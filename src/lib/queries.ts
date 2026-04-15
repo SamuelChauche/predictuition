@@ -255,3 +255,98 @@ export const SHARE_PRICE_CHART = gql`
   }
 `;
 
+// ── Market target search (atom + triple autocomplete) ──
+
+// Search by label — same vaults pattern as all other queries
+export const SEARCH_TARGETS = gql`
+  query SearchTargets($q: String!, $limit: Int!) {
+    atomVaults: vaults(
+      where: {
+        term: {
+          atom_id: { _is_null: false }
+          atom: { label: { _ilike: $q } }
+        }
+      }
+      order_by: { position_count: desc }
+      limit: $limit
+    ) {
+      term_id
+      term { atom { term_id label image type } }
+    }
+    tripleVaults: vaults(
+      where: {
+        term: {
+          triple_id: { _is_null: false }
+          triple: {
+            _or: [
+              { subject: { label: { _ilike: $q } } }
+              { predicate: { label: { _ilike: $q } } }
+              { object: { label: { _ilike: $q } } }
+            ]
+          }
+        }
+      }
+      order_by: { position_count: desc }
+      limit: $limit
+    ) {
+      term_id
+      term {
+        triple {
+          term_id
+          subject { label image term_id }
+          predicate { label term_id }
+          object { label image term_id }
+        }
+      }
+    }
+  }
+`;
+
+// Search by numeric term_id — via vaults like all other queries
+export const SEARCH_TARGET_BY_ID = gql`
+  query SearchTargetById($termId: String!) {
+    vaults(where: { term_id: { _eq: $termId } }, limit: 1) {
+      term_id
+      term {
+        atom { term_id label image type }
+        triple {
+          term_id
+          subject { label image term_id }
+          predicate { label term_id }
+          object { label image term_id }
+        }
+      }
+    }
+  }
+`;
+
+// ── On-chain market target enrichment (single vault by term_id) ──
+
+export const VAULT_TARGET = gql`
+  query VaultTarget($termId: String!) {
+    vaults(
+      where: { term_id: { _eq: $termId } }
+      limit: 1
+    ) {
+      term_id
+      current_share_price
+      total_assets
+      position_count
+      term {
+        atom {
+          label
+          image
+          type
+          term_id
+        }
+        triple {
+          term_id
+          subject { label image term_id }
+          predicate { label term_id }
+          object { label image term_id }
+        }
+      }
+    }
+  }
+`;
+

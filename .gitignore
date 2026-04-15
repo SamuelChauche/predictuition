@@ -13,6 +13,14 @@ dist-ssr
 *.local
 .env
 .claude/
+.agent/
+
+# Foundry
+contracts/out
+contracts/cache
+contracts/.env
+contracts/broadcast/*/31337
+contracts/lib/forge-std
 
 # Editor directories and files
 .vscode/*

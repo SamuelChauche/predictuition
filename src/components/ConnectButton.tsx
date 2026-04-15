@@ -1,4 +1,5 @@
-import { useAccount, useConnect, useDisconnect, useBalance } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
+import { useAccount, useBalance } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -8,12 +9,20 @@ function shortenAddr(addr: string): string {
 }
 
 export function ConnectButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { login, logout, authenticated, ready } = usePrivy();
+  const { address } = useAccount();
   const [hovered, setHovered] = useState(false);
 
-  if (isConnected && address) {
+  if (!ready) {
+    return (
+      <Button variant="outline" size="sm" disabled className={compact ? "" : "w-full"}>
+        <Wallet className="w-4 h-4 mr-1" />
+        {compact ? "" : "Loading..."}
+      </Button>
+    );
+  }
+
+  if (authenticated && address) {
     return (
       <Button
         variant="outline"
@@ -21,7 +30,7 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
         className={`${compact ? "" : "w-full"} ${hovered ? "border-brick/50 text-brick" : ""}`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => disconnect()}
+        onClick={() => logout()}
       >
         {hovered ? (
           <>
@@ -43,20 +52,17 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
       variant="default"
       size="sm"
       className={`bg-olive hover:bg-olive/80 text-black font-medium ${compact ? "" : "w-full"}`}
-      disabled={isPending}
-      onClick={() => {
-        const connector = connectors[0];
-        if (connector) connect({ connector });
-      }}
+      onClick={() => login()}
     >
       <Wallet className="w-4 h-4 mr-1" />
-      {isPending ? "Connecting..." : compact ? "" : "Connect Wallet"}
+      {compact ? "" : "Connect Wallet"}
     </Button>
   );
 }
 
 export function useWalletInfo() {
-  const { address, isConnected, chain } = useAccount();
+  const { authenticated } = usePrivy();
+  const { address, chain } = useAccount();
   const { data: balance } = useBalance({ address });
 
   const balanceStr = balance
@@ -66,7 +72,7 @@ export function useWalletInfo() {
   return {
     address,
     shortAddress: address ? shortenAddr(address) : undefined,
-    isConnected,
+    isConnected: authenticated,
     chainName: chain?.name,
     chainId: chain?.id,
     balance: balanceStr,
