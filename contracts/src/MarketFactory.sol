@@ -5,21 +5,16 @@ import "./Market.sol";
 
 /// @title MarketFactory
 /// @notice Déploie et indexe les marchés Predictuition.
-/// @dev    Déployé sur Intuition L3 (chain 1155).
-///         Le curveId par défaut est lu depuis MultiVault.getBondingCurveConfig()
-///         et stocké à la construction — governable via setCurveId().
 contract MarketFactory {
 
     // ─── Config ───────────────────────────────────────────────────────────────
 
     IEthMultiVault public immutable intuition;
 
-    uint256 public curveId;               // bonding curve ID (1 sur mainnet)
-    uint256 public creationBond       = 0.05 ether;
-    uint256 public minVolume          = 0.5 ether;
-    uint256 public protocolFeeBps     = 100;  // 1%
-    uint256 public stakerDividendBps  = 100;  // 1%
-    uint256 public resolverReward     = 0.005 ether;
+    uint256 public creationBond    = 0.05 ether;
+    uint256 public minVolume       = 0.5 ether;
+    uint256 public protocolFeeBps  = 200;   // 2%
+    uint256 public resolverReward  = 0.005 ether;
 
     address public owner;
     address public feeCollector;
@@ -38,6 +33,7 @@ contract MarketFactory {
         address indexed creator,
         uint8   conditionType,
         bytes32 targetId,
+        uint256 curveId,
         uint256 targetValue,
         uint256 deadline
     );
@@ -50,10 +46,6 @@ contract MarketFactory {
         intuition    = IEthMultiVault(_intuition);
         feeCollector = _feeCollector;
         owner        = msg.sender;
-
-        // Lit le curveId par défaut depuis le contrat Intuition
-        (, uint256 _curveId) = IEthMultiVault(_intuition).getBondingCurveConfig();
-        curveId = _curveId;
     }
 
     modifier onlyOwner() {
@@ -63,24 +55,25 @@ contract MarketFactory {
 
     // ─── Création ─────────────────────────────────────────────────────────────
 
-    /// @param _conditionType  Type de condition (voir constantes Market.sol)
+    /// @param _conditionType  Type de condition (1-6, voir Market.sol)
     /// @param _targetId       bytes32 termId de l'atom ou triple sur Intuition
+    /// @param _curveId        ID de la bonding curve (1 = linéaire, 2 = exponentielle)
     /// @param _targetValue    Seuil : wei pour TVL/PRICE, bps pour RATIO
     /// @param _deadline       Timestamp (seconds) de résolution
     /// @param _lockBuffer     Secondes avant deadline où les paris sont fermés
     function createMarket(
         uint8   _conditionType,
         bytes32 _targetId,
+        uint256 _curveId,
         uint256 _targetValue,
         uint256 _deadline,
         uint256 _lockBuffer
     ) external payable returns (address) {
-        require(msg.value >= creationBond,                 "Bond insuffisant");
+        require(msg.value >= creationBond,                  "Bond insuffisant");
         require(_deadline > block.timestamp + _lockBuffer,  "Deadline trop courte");
-        require(_lockBuffer < _deadline - block.timestamp, "Buffer trop grand");
-
-        // Vérifie que le term existe sur Intuition
-        require(intuition.isTermCreated(_targetId), "Term inconnu sur Intuition");
+        require(_lockBuffer < _deadline - block.timestamp,  "Buffer trop grand");
+        require(_curveId > 0,                               "CurveId invalide");
+        require(intuition.isTermCreated(_targetId),         "Term inconnu sur Intuition");
 
         uint256 lockTime = _deadline - _lockBuffer;
 
@@ -89,13 +82,12 @@ contract MarketFactory {
             msg.sender,
             _conditionType,
             _targetId,
-            curveId,
+            _curveId,
             _targetValue,
             _deadline,
             lockTime,
             minVolume,
             protocolFeeBps,
-            stakerDividendBps,
             resolverReward,
             feeCollector
         );
@@ -105,14 +97,13 @@ contract MarketFactory {
         isMarket[marketAddr]      = true;
         bondPerMarket[marketAddr] = msg.value;
 
-        emit MarketCreated(marketAddr, msg.sender, _conditionType, _targetId, _targetValue, _deadline);
+        emit MarketCreated(marketAddr, msg.sender, _conditionType, _targetId, _curveId, _targetValue, _deadline);
 
         return marketAddr;
     }
 
     // ─── Bond ─────────────────────────────────────────────────────────────────
 
-    /// @notice Rembourse le bond au créateur si volume atteint, sinon au feeCollector.
     function claimBond(address _market) external {
         require(isMarket[_market],     "Marche inconnu");
         require(!bondClaimed[_market], "Bond deja claim");
@@ -120,14 +111,15 @@ contract MarketFactory {
         Market m = Market(payable(_market));
         require(m.resolved(), "Pas encore resolu");
 
-        bondClaimed[_market] = true; // CEI avant transfer
+        bondClaimed[_market] = true;
 
         uint256 bond = bondPerMarket[_market];
         require(bond > 0, "Pas de bond");
 
         address recipient = m.totalPool() >= minVolume ? m.creator() : feeCollector;
 
-        (bool _ok,) = payable(recipient).call{value: bond}(""); require(_ok, "Transfer failed");
+        (bool _ok,) = payable(recipient).call{value: bond}("");
+        require(_ok, "Transfer failed");
         emit BondClaimed(_market, recipient, bond);
     }
 
@@ -137,20 +129,14 @@ contract MarketFactory {
         uint256 _creationBond,
         uint256 _minVolume,
         uint256 _protocolFeeBps,
-        uint256 _stakerDividendBps,
         uint256 _resolverReward
     ) external onlyOwner {
-        require(_protocolFeeBps + _stakerDividendBps <= 3000, "Fees > 30%");
-        creationBond      = _creationBond;
-        minVolume         = _minVolume;
-        protocolFeeBps    = _protocolFeeBps;
-        stakerDividendBps = _stakerDividendBps;
-        resolverReward    = _resolverReward;
+        require(_protocolFeeBps <= 3000, "Fee > 30%");
+        creationBond     = _creationBond;
+        minVolume        = _minVolume;
+        protocolFeeBps   = _protocolFeeBps;
+        resolverReward   = _resolverReward;
         emit ParamsUpdated();
-    }
-
-    function setCurveId(uint256 _curveId) external onlyOwner {
-        curveId = _curveId;
     }
 
     function setFeeCollector(address _feeCollector) external onlyOwner {

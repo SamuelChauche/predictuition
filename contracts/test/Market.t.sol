@@ -7,8 +7,6 @@ import {IEthMultiVault} from "../src/IEthMultiVault.sol";
 
 // ─── Mock ─────────────────────────────────────────────────────────────────────
 
-/// @notice Mock minimal de IEthMultiVault.
-///         getVault distingue TARGET_ID et counterId pour les tests triple.
 contract MockMultiVault is IEthMultiVault {
     bytes32 public counterId = bytes32(uint256(999));
 
@@ -17,7 +15,6 @@ contract MockMultiVault is IEthMultiVault {
     uint256 public counterAssets;
     uint256 public counterShares;
     uint256 public mockSharePrice;
-    mapping(address => uint256) public mockUserShares;
 
     function setVault(uint256 _assets, uint256 _shares) external {
         vaultAssets = _assets;
@@ -30,7 +27,6 @@ contract MockMultiVault is IEthMultiVault {
     }
 
     function setSharePrice(uint256 _price) external { mockSharePrice = _price; }
-    function setUserShares(address _user, uint256 _shares) external { mockUserShares[_user] = _shares; }
 
     function getVault(bytes32 termId, uint256) external view override returns (uint256, uint256) {
         if (termId == counterId) return (counterAssets, counterShares);
@@ -41,8 +37,8 @@ contract MockMultiVault is IEthMultiVault {
         return mockSharePrice;
     }
 
-    function getShares(address account, bytes32, uint256) external view override returns (uint256) {
-        return mockUserShares[account];
+    function getShares(address, bytes32, uint256) external pure override returns (uint256) {
+        return 0;
     }
 
     function getTriple(bytes32) external pure override returns (bytes32, bytes32, bytes32) {
@@ -65,34 +61,30 @@ contract MockMultiVault is IEthMultiVault {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 contract MarketTest is Test {
-    // Accept ETH from resolverReward when this contract is msg.sender on resolve()
     receive() external payable {}
 
-    // Mirror Market events for vm.expectEmit
     event BetPlaced(address indexed user, bool side, uint256 amount);
     event MarketResolved(bool outcome, uint256 pool, uint256 resolverPay);
     event Claimed(address indexed user, uint256 payout);
     event Refunded(address indexed user, uint256 amount);
 
     MockMultiVault public vault;
-    Market public market;  // TVL_ABOVE, targetValue = 1 ether
+    Market public market;
 
-    address public alice    = makeAddr("alice");
-    address public bob      = makeAddr("bob");
-    address public carol    = makeAddr("carol");
+    address public alice       = makeAddr("alice");
+    address public bob         = makeAddr("bob");
+    address public carol       = makeAddr("carol");
     address public feeCollector = makeAddr("feeCollector");
-    address public resolver = makeAddr("resolver");
+    address public resolver    = makeAddr("resolver");
 
     bytes32 constant TARGET_ID = bytes32(uint256(42));
     uint256 constant CURVE_ID  = 1;
 
-    uint256 constant MIN_VOLUME          = 0.5 ether;
-    uint256 constant PROTOCOL_FEE_BPS    = 100;   // 1 %
-    uint256 constant STAKER_DIVIDEND_BPS = 100;   // 1 %
-    uint256 constant RESOLVER_REWARD     = 0.005 ether;
-    uint256 constant TARGET_VALUE        = 1 ether;
+    uint256 constant MIN_VOLUME       = 0.5 ether;
+    uint256 constant PROTOCOL_FEE_BPS = 100;   // 1%
+    uint256 constant RESOLVER_REWARD  = 0.005 ether;
+    uint256 constant TARGET_VALUE     = 1 ether;
 
-    // Mirror Market.sol condition constants
     uint8 constant TVL_ABOVE    = 1;
     uint8 constant TVL_BELOW    = 2;
     uint8 constant PRICE_ABOVE  = 3;
@@ -100,7 +92,6 @@ contract MarketTest is Test {
     uint8 constant TRIPLE_RATIO = 5;
     uint8 constant TRIPLE_FLIP  = 6;
 
-    // Fixed timestamp offsets (block.timestamp = 1 in Foundry by default)
     uint256 constant LOCK_TS     = 101;
     uint256 constant DEADLINE_TS = 201;
 
@@ -118,13 +109,11 @@ contract MarketTest is Test {
             LOCK_TS,
             MIN_VOLUME,
             PROTOCOL_FEE_BPS,
-            STAKER_DIVIDEND_BPS,
             RESOLVER_REWARD,
             feeCollector
         );
     }
 
-    /// @dev Place bets, set vault outcome, roll to deadline, resolve.
     function _resolveWith(Market m, bool vaultAboveTarget) internal {
         vm.prank(alice); m.bet{value: 2 ether}(true);
         vm.prank(bob);   m.bet{value: 2 ether}(false);
@@ -210,8 +199,6 @@ contract MarketTest is Test {
     }
 
     function test_RevertWhen_BetAfterResolved() public {
-        // Once resolved, block.number >= deadline > lockTime.
-        // bet() checks lockTime first, so the effective revert is "Marche verrouille".
         _resolveWith(market, true);
 
         vm.prank(carol);
@@ -220,7 +207,6 @@ contract MarketTest is Test {
     }
 
     function test_RevertWhen_BetInRefundMode() public {
-        // Same: post-deadline block.number > lockTime fires before the refundMode check.
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
         vm.warp(DEADLINE_TS);
         market.resolve();
@@ -259,7 +245,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
-        vault.setVault(2 ether, 1000e18); // 2 ether >= 1 ether → YES
+        vault.setVault(2 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         market.resolve();
 
@@ -271,7 +257,7 @@ contract MarketTest is Test {
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
-        vault.setVault(0.5 ether, 1000e18); // 0.5 ether < 1 ether → NO
+        vault.setVault(0.5 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         market.resolve();
 
@@ -284,7 +270,7 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setVault(0.5 ether, 1000e18); // 0.5 ether < 1 ether → YES
+        vault.setVault(0.5 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -296,7 +282,7 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setVault(2 ether, 1000e18); // 2 ether >= 1 ether → NO
+        vault.setVault(2 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -308,7 +294,7 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setSharePrice(2 ether); // 2 ether >= 1 ether → YES
+        vault.setSharePrice(2 ether);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -320,7 +306,7 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setSharePrice(0.5 ether); // 0.5 ether < 1 ether → NO
+        vault.setSharePrice(0.5 ether);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -332,7 +318,7 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setSharePrice(0.5 ether); // 0.5 ether < 1 ether → YES
+        vault.setSharePrice(0.5 ether);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -340,13 +326,12 @@ contract MarketTest is Test {
     }
 
     function test_ResolveTripleRatioTrue() public {
-        // targetValue = 7500 bps (75%), forAssets / total must be >= 75%
         Market m = _makeMarket(TRIPLE_RATIO, 7500);
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setVault(3 ether, 1000e18);  // for = 3 ether
-        vault.setCounter(1 ether, 100e18); // against = 1 ether → ratio = 75% → YES
+        vault.setVault(3 ether, 1000e18);
+        vault.setCounter(1 ether, 100e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -358,8 +343,8 @@ contract MarketTest is Test {
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        vault.setVault(1 ether, 1000e18);  // for = 1 ether
-        vault.setCounter(1 ether, 100e18); // against = 1 ether → ratio = 50% < 75% → NO
+        vault.setVault(1 ether, 1000e18);
+        vault.setCounter(1 ether, 100e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -372,7 +357,7 @@ contract MarketTest is Test {
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
         vault.setVault(0, 0);
-        vault.setCounter(0, 0); // total = 0 → false
+        vault.setCounter(0, 0);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
@@ -380,7 +365,6 @@ contract MarketTest is Test {
     }
 
     function test_ResolveTripleFlipTrue() public {
-        // Initial state: for majority (2 ether > 1 ether)
         vault.setVault(2 ether, 1000e18);
         vault.setCounter(1 ether, 100e18);
 
@@ -388,19 +372,18 @@ contract MarketTest is Test {
             address(vault), address(this), TRIPLE_FLIP,
             TARGET_ID, CURVE_ID, 0,
             DEADLINE_TS, LOCK_TS, MIN_VOLUME,
-            PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
+            PROTOCOL_FEE_BPS, RESOLVER_REWARD, feeCollector
         );
 
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        // Flip: against becomes majority
         vault.setVault(0.5 ether, 1000e18);
         vault.setCounter(2 ether, 100e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
-        assertTrue(m.outcome()); // flip happened → YES
+        assertTrue(m.outcome());
     }
 
     function test_ResolveTripleFlipFalseWhenNoFlip() public {
@@ -411,19 +394,18 @@ contract MarketTest is Test {
             address(vault), address(this), TRIPLE_FLIP,
             TARGET_ID, CURVE_ID, 0,
             DEADLINE_TS, LOCK_TS, MIN_VOLUME,
-            PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
+            PROTOCOL_FEE_BPS, RESOLVER_REWARD, feeCollector
         );
 
         vm.prank(alice); m.bet{value: 1 ether}(true);
         vm.prank(bob);   m.bet{value: 1 ether}(false);
 
-        // No flip: for still majority
         vault.setVault(3 ether, 1000e18);
         vault.setCounter(1 ether, 100e18);
         vm.warp(DEADLINE_TS);
         m.resolve();
 
-        assertFalse(m.outcome()); // no flip → NO
+        assertFalse(m.outcome());
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -445,7 +427,7 @@ contract MarketTest is Test {
     function test_RevertWhen_ResolveInRefundMode() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
         vm.warp(DEADLINE_TS);
-        market.resolve(); // activates refundMode
+        market.resolve();
 
         vm.expectRevert("Mode remboursement");
         market.resolve();
@@ -468,20 +450,18 @@ contract MarketTest is Test {
         vm.prank(resolver);
         market.resolve();
 
-        uint256 pool            = 4 ether;
-        uint256 expectedFee     = (pool * PROTOCOL_FEE_BPS) / 10000;    // 0.04 ether
-        uint256 expectedDividend = (pool * STAKER_DIVIDEND_BPS) / 10000; // 0.04 ether
-        uint256 expectedReward  = RESOLVER_REWARD;                       // 0.005 ether
-        uint256 expectedRemaining = pool - expectedFee - expectedDividend - expectedReward;
+        uint256 pool              = 4 ether;
+        uint256 expectedFee       = (pool * PROTOCOL_FEE_BPS) / 10000; // 0.04 ether
+        uint256 expectedReward    = RESOLVER_REWARD;                    // 0.005 ether
+        uint256 expectedRemaining = pool - expectedFee - expectedReward;
 
-        assertEq(feeCollector.balance - fcBefore, expectedFee,     "protocolFee");
-        assertEq(resolver.balance - resBefore,    expectedReward,  "resolverReward");
-        assertEq(market.totalDividend(),          expectedDividend, "dividend");
-        assertEq(market.remainingPoolAfterFees(), expectedRemaining, "remaining");
+        assertEq(feeCollector.balance - fcBefore, expectedFee,       "protocolFee");
+        assertEq(resolver.balance - resBefore,    expectedReward,    "resolverReward");
+        assertEq(market.remainingPoolAfterFees(),  expectedRemaining, "remaining");
     }
 
     function test_ResolveActivatesRefundWhenVolumeLow() public {
-        vm.prank(alice); market.bet{value: 0.1 ether}(true); // below 0.5 ether
+        vm.prank(alice); market.bet{value: 0.1 ether}(true);
 
         vm.warp(DEADLINE_TS);
         market.resolve();
@@ -497,7 +477,6 @@ contract MarketTest is Test {
         vault.setVault(2 ether, 1000e18);
         vm.warp(DEADLINE_TS);
 
-        // Check only outcome (data); pool and resolverPay vary with fees.
         vm.expectEmit(false, false, false, true);
         emit MarketResolved(true, 2 ether, RESOLVER_REWARD);
         market.resolve();
@@ -508,29 +487,27 @@ contract MarketTest is Test {
     // ══════════════════════════════════════════════════════════════════════════
 
     function test_ClaimSoleYesWinnerGetsFullRemaining() public {
-        _resolveWith(market, true); // alice 2 ether YES wins, bob 2 ether NO loses
+        _resolveWith(market, true);
 
         uint256 remaining = market.remainingPoolAfterFees();
         uint256 before = alice.balance;
         vm.prank(alice);
         market.claim();
 
-        // Alice is 100% of poolYes → gets all remaining
         assertEq(alice.balance - before, remaining);
     }
 
     function test_ClaimProportionalToShares() public {
-        // alice: 1/4 of YES, carol: 3/4 of YES
         vm.prank(alice); market.bet{value: 1 ether}(true);
         vm.prank(carol); market.bet{value: 3 ether}(true);
         vm.prank(bob);   market.bet{value: 2 ether}(false);
 
-        vault.setVault(2 ether, 1000e18); // YES wins
+        vault.setVault(2 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         market.resolve();
 
         uint256 remaining = market.remainingPoolAfterFees();
-        uint256 poolYes   = market.poolYes(); // 4 ether
+        uint256 poolYes   = market.poolYes();
 
         uint256 aliceBefore = alice.balance;
         uint256 carolBefore = carol.balance;
@@ -559,7 +536,7 @@ contract MarketTest is Test {
     }
 
     function test_RevertWhen_ClaimLosingShares() public {
-        _resolveWith(market, true); // YES wins — bob bet NO
+        _resolveWith(market, true);
 
         vm.prank(bob);
         vm.expectRevert("Rien a claim");
@@ -569,67 +546,10 @@ contract MarketTest is Test {
     function test_ClaimEmitsEvent() public {
         _resolveWith(market, true);
 
-        vm.expectEmit(true, false, false, false); // check alice address, skip payout amount
+        vm.expectEmit(true, false, false, false);
         emit Claimed(alice, 0);
         vm.prank(alice);
         market.claim();
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Staker dividend
-    // ══════════════════════════════════════════════════════════════════════════
-
-    function test_StakerDividendProportionalToVaultShares() public {
-        // vault: 1000e18 total shares; alice holds 250e18 (25%)
-        vault.setVault(2 ether, 1000e18);
-        vault.setUserShares(alice, 250e18);
-
-        vm.prank(alice); market.bet{value: 1 ether}(true);
-        vm.prank(bob);   market.bet{value: 1 ether}(false);
-
-        vm.warp(DEADLINE_TS);
-        market.resolve();
-
-        uint256 before = alice.balance;
-        vm.prank(alice);
-        market.claimStakerDividend();
-
-        uint256 expected = (250e18 * market.totalDividend()) / 1000e18;
-        assertEq(alice.balance - before, expected);
-    }
-
-    function test_RevertWhen_StakerClaimBeforeResolved() public {
-        vm.prank(alice);
-        vm.expectRevert("Pas resolu");
-        market.claimStakerDividend();
-    }
-
-    function test_RevertWhen_StakerClaimTwice() public {
-        vault.setUserShares(alice, 500e18);
-        vm.prank(alice); market.bet{value: 1 ether}(true);
-        vm.prank(bob);   market.bet{value: 1 ether}(false);
-        vault.setVault(2 ether, 1000e18);
-        vm.warp(DEADLINE_TS);
-        market.resolve();
-
-        vm.startPrank(alice);
-        market.claimStakerDividend();
-        vm.expectRevert("Deja claim");
-        market.claimStakerDividend();
-        vm.stopPrank();
-    }
-
-    function test_RevertWhen_StakerClaimWithNoVaultShares() public {
-        // alice has no Intuition vault shares
-        vm.prank(alice); market.bet{value: 1 ether}(true);
-        vm.prank(bob);   market.bet{value: 1 ether}(false);
-        vault.setVault(2 ether, 1000e18);
-        vm.warp(DEADLINE_TS);
-        market.resolve();
-
-        vm.prank(alice);
-        vm.expectRevert("Pas de shares Intuition");
-        market.claimStakerDividend();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -688,7 +608,7 @@ contract MarketTest is Test {
 
     function test_RevertWhen_EmergencyRefundWhenVolumeSufficient() public {
         vm.prank(alice); market.bet{value: 1 ether}(true);
-        vm.prank(bob);   market.bet{value: 1 ether}(false); // 2 ether > MIN_VOLUME
+        vm.prank(bob);   market.bet{value: 1 ether}(false);
 
         vm.warp(DEADLINE_TS);
         vm.prank(alice);
@@ -722,7 +642,7 @@ contract MarketTest is Test {
     function test_ReceiveRejectsEthInRefundMode() public {
         vm.prank(alice); market.bet{value: 0.1 ether}(true);
         vm.warp(DEADLINE_TS);
-        market.resolve(); // activates refundMode
+        market.resolve();
 
         vm.prank(carol);
         (bool ok,) = address(market).call{value: 0.1 ether}("");
@@ -737,31 +657,28 @@ contract MarketTest is Test {
         vm.expectRevert("Deadline <= lockTime");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
-            LOCK_TS,        // deadline == lockTime
-            LOCK_TS,
-            MIN_VOLUME, PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
+            LOCK_TS, LOCK_TS,
+            MIN_VOLUME, PROTOCOL_FEE_BPS, RESOLVER_REWARD, feeCollector
         );
     }
 
     function test_RevertWhen_LockTimeInPast() public {
-        vm.warp(150); // block.timestamp = 150 > LOCK_TS (101)
+        vm.warp(150);
 
         vm.expectRevert("LockTime dans le passe");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
-            300, // deadline
-            100, // lockTime < block.timestamp
-            MIN_VOLUME, PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
+            300, 100,
+            MIN_VOLUME, PROTOCOL_FEE_BPS, RESOLVER_REWARD, feeCollector
         );
     }
 
-    function test_RevertWhen_FeesExceed30Percent() public {
-        vm.expectRevert("Fees > 30%");
+    function test_RevertWhen_FeeExceeds30Percent() public {
+        vm.expectRevert("Fee > 30%");
         new Market(
             address(vault), address(this), TVL_ABOVE, TARGET_ID, CURVE_ID, TARGET_VALUE,
             DEADLINE_TS, LOCK_TS, MIN_VOLUME,
-            2000, // protocol 20%
-            1001, // dividend 10.01% → total > 30%
+            3001, // 30.01%
             RESOLVER_REWARD, feeCollector
         );
     }
@@ -770,10 +687,9 @@ contract MarketTest is Test {
         vm.expectRevert("ConditionType invalide");
         new Market(
             address(vault), address(this),
-            7, // invalid
-            TARGET_ID, CURVE_ID, TARGET_VALUE,
+            7, TARGET_ID, CURVE_ID, TARGET_VALUE,
             DEADLINE_TS, LOCK_TS, MIN_VOLUME,
-            PROTOCOL_FEE_BPS, STAKER_DIVIDEND_BPS, RESOLVER_REWARD, feeCollector
+            PROTOCOL_FEE_BPS, RESOLVER_REWARD, feeCollector
         );
     }
 
@@ -781,7 +697,6 @@ contract MarketTest is Test {
     // Fuzz
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Bet accumulation never overflows and totalPool is always consistent.
     function testFuzz_BetPoolConsistency(uint96 yesAmt, uint96 noAmt) public {
         vm.assume(yesAmt > 0);
         vm.assume(noAmt > 0);
@@ -795,7 +710,6 @@ contract MarketTest is Test {
         assertEq(market.sharesNo(alice), noAmt);
     }
 
-    /// @notice Sum of all winner payouts never exceeds remainingPoolAfterFees.
     function testFuzz_PayoutsSumDoesNotExceedRemaining(uint96 amt1, uint96 amt2) public {
         uint256 a = bound(uint256(amt1), 1, 10 ether);
         uint256 b = bound(uint256(amt2), 1, 10 ether);
@@ -808,7 +722,7 @@ contract MarketTest is Test {
         vm.prank(carol); market.bet{value: b}(true);
         vm.prank(bob);   market.bet{value: 1 ether}(false);
 
-        vault.setVault(2 ether, 1000e18); // YES wins
+        vault.setVault(2 ether, 1000e18);
         vm.warp(DEADLINE_TS);
         market.resolve();
 
@@ -818,23 +732,19 @@ contract MarketTest is Test {
         uint256 payA = (a * remaining) / poolYes;
         uint256 payB = (b * remaining) / poolYes;
 
-        // Rounding down: sum of payouts ≤ remaining
         assertLe(payA + payB, remaining, "payouts exceed remaining");
     }
 
-    /// @notice Fee math is always: fee + dividend + reward + remaining == pool (within 1 wei rounding).
-    function testFuzz_FeeInvariant(uint96 rawPool, uint16 feeBps, uint16 dividendBps) public {
-        uint256 pool     = bound(uint256(rawPool), MIN_VOLUME, 100 ether);
-        uint256 fBps     = bound(uint256(feeBps),     0, 1500);
-        uint256 dBps     = bound(uint256(dividendBps), 0, 1500);
-        uint256 reward   = RESOLVER_REWARD;
+    function testFuzz_FeeInvariant(uint96 rawPool, uint16 feeBps) public {
+        uint256 pool   = bound(uint256(rawPool), MIN_VOLUME, 100 ether);
+        uint256 fBps   = bound(uint256(feeBps), 0, 3000);
+        uint256 reward = RESOLVER_REWARD;
 
-        uint256 fee      = (pool * fBps) / 10000;
-        uint256 dividend = (pool * dBps) / 10000;
+        uint256 fee = (pool * fBps) / 10000;
 
-        if (pool > fee + dividend + reward) {
-            uint256 remaining = pool - fee - dividend - reward;
-            assertEq(fee + dividend + reward + remaining, pool);
+        if (pool > fee + reward) {
+            uint256 remaining = pool - fee - reward;
+            assertEq(fee + reward + remaining, pool);
         }
     }
 }

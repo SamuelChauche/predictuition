@@ -7,8 +7,6 @@ import "../src/Market.sol";
 
 /// @notice Scripts du flow complet Predictuition sur testnet Intuition (chain 13579).
 ///
-/// Atom cible : 0x0000491522e...909a4 (Caip10, TVL ~0.002 tTRUST, verifiable via cast)
-///
 /// ─── Étapes ──────────────────────────────────────────────────────────────────
 ///
 /// 1. Déploie la factory (ou use existante) + crée le marché :
@@ -19,7 +17,7 @@ import "../src/Market.sol";
 ///    forge script script/Flow.s.sol --sig "betYesNo(address)" $MARKET_ADDR \
 ///      --rpc-url intuition_testnet --broadcast --private-key $PRIVATE_KEY
 ///
-/// 3. Attends le bloc de deadline (voir logs de createMarket), puis résous :
+/// 3. Résous après deadline :
 ///    forge script script/Flow.s.sol --sig "resolve(address)" $MARKET_ADDR \
 ///      --rpc-url intuition_testnet --broadcast --private-key $PRIVATE_KEY
 ///
@@ -27,22 +25,11 @@ import "../src/Market.sol";
 ///    forge script script/Flow.s.sol --sig "claim(address)" $MARKET_ADDR \
 ///      --rpc-url intuition_testnet --broadcast --private-key $PRIVATE_KEY
 ///
-/// ─── Env vars requises ───────────────────────────────────────────────────────
-///   PRIVATE_KEY       clé privée du wallet testnet
-///   DEPLOYER_ADDRESS  adresse correspondante
-///   FACTORY_ADDR      adresse de la MarketFactory (set après Deploy.s.sol)
-///
 contract FlowScript is Script {
 
-    // Atom vérifié on-chain sur testnet (Caip10, TVL ~0.002 tTRUST)
-    // cast call 0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91
-    //   "isTermCreated(bytes32)(bool)" 0x0000491522... --rpc-url https://testnet.rpc.intuition.systems
-    // → true
-    bytes32 constant TEST_ATOM = 0x0000491522e120a9b3cb9964bfb34fadbac429b5b978ae1691af5013104909a4;
-
-    // Condition TVL_ABOVE avec target = 500_000 wei (~0.0000005 tTRUST)
-    // → TVL actuel 0.002 tTRUST >> target : outcome = YES garanti
+    bytes32 constant TEST_ATOM   = 0x0000491522e120a9b3cb9964bfb34fadbac429b5b978ae1691af5013104909a4;
     uint256 constant TARGET_VALUE = 500_000;
+    uint256 constant CURVE_LINEAR = 1;
 
     // ─── 1. createMarket ──────────────────────────────────────────────────────
 
@@ -51,18 +38,18 @@ contract FlowScript is Script {
         MarketFactory factory = MarketFactory(payable(vm.envAddress("FACTORY_ADDR")));
 
         uint256 curTs      = block.timestamp;
-        uint256 lockBuffer = 60;                  // 60 secondes de paris
-        uint256 deadline   = curTs + 180;         // 3 minutes
+        uint256 lockBuffer = 60;
+        uint256 deadline   = curTs + 180;
 
         console2.log("Timestamp actuel :", curTs);
         console2.log("LockTime         :", deadline - lockBuffer);
         console2.log("Deadline         :", deadline);
-        console2.log("Attends ~3 minutes apres le bet avant de resoudre.");
 
         vm.startBroadcast(deployer);
         address market = factory.createMarket{value: factory.creationBond()}(
-            1, // TVL_ABOVE
+            1,            // TVL_ABOVE
             TEST_ATOM,
+            CURVE_LINEAR, // curveId
             TARGET_VALUE,
             deadline,
             lockBuffer
@@ -79,18 +66,17 @@ contract FlowScript is Script {
         address deployer = vm.envAddress("DEPLOYER_ADDRESS");
         Market  market   = Market(payable(marketAddr));
 
-        uint256 betAmt = 0.001 ether; // 0.001 tTRUST chacun
+        uint256 betAmt = 0.001 ether;
 
         vm.startBroadcast(deployer);
-        market.bet{value: betAmt}(true);   // YES
-        market.bet{value: betAmt}(false);  // NO
+        market.bet{value: betAmt}(true);
+        market.bet{value: betAmt}(false);
         vm.stopBroadcast();
 
         console2.log("Bets places (YES + NO) de", betAmt, "tTRUST chacun");
         console2.log("poolYes :", market.poolYes());
         console2.log("poolNo  :", market.poolNo());
         console2.log("oddsYes (bps) :", market.oddsYesBps());
-        console2.log("Attends la deadline puis appelle resolve(address)");
     }
 
     // ─── 3. resolve ───────────────────────────────────────────────────────────
@@ -108,8 +94,7 @@ contract FlowScript is Script {
 
         console2.log("Resolu !");
         console2.log("Outcome (true=YES) :", market.outcome());
-        console2.log("remainingPool :", market.remainingPoolAfterFees());
-        console2.log("totalDividend :", market.totalDividend());
+        console2.log("remainingPool      :", market.remainingPoolAfterFees());
     }
 
     // ─── 4. claim ─────────────────────────────────────────────────────────────
@@ -129,7 +114,7 @@ contract FlowScript is Script {
         console2.log("Claim effectue !");
     }
 
-    // ─── Helpers de lecture (pas de broadcast) ───────────────────────────────
+    // ─── Status (lecture seule) ───────────────────────────────────────────────
 
     function status(address marketAddr) external view {
         Market market = Market(payable(marketAddr));
@@ -139,7 +124,7 @@ contract FlowScript is Script {
         console2.log("poolYes    :", market.poolYes());
         console2.log("poolNo     :", market.poolNo());
         console2.log("deadline   :", market.deadline());
-        console2.log("block now  :", block.number);
+        console2.log("curveId    :", market.curveId());
         if (market.resolved()) {
             console2.log("outcome    :", market.outcome());
             console2.log("remaining  :", market.remainingPoolAfterFees());
