@@ -48,6 +48,15 @@ export interface TripleVaultData {
   position_count: number;
 }
 
+function dedupeByTermId<T extends { term_id: string }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    if (seen.has(r.term_id)) return false;
+    seen.add(r.term_id);
+    return true;
+  });
+}
+
 export function useTopTriplesBySharePrice(limit = 10) {
   return useQuery({
     queryKey: ["triples", "sharePrice", limit],
@@ -56,7 +65,7 @@ export function useTopTriplesBySharePrice(limit = 10) {
         TOP_TRIPLE_VAULTS_BY_SHARE_PRICE,
         { limit }
       ),
-    select: (data) => data.vaults,
+    select: (data) => dedupeByTermId(data.vaults),
   });
 }
 
@@ -68,7 +77,7 @@ export function useTopTriplesByPositionCount(limit = 10) {
         TOP_TRIPLE_VAULTS_BY_POSITION_COUNT,
         { limit }
       ),
-    select: (data) => data.vaults,
+    select: (data) => dedupeByTermId(data.vaults),
   });
 }
 

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { wagmiConfig } from "@/config/wagmi";
-import { intuitionTestnet } from "@/config/chains";
+import { intuitionTestnet, intuitionMainnet } from "@/config/chains";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import Dashboard from "@/pages/Dashboard";
@@ -44,7 +44,7 @@ export default function App() {
           accentColor: "#5b8e7d",
         },
         defaultChain: intuitionTestnet,
-        supportedChains: [intuitionTestnet],
+        supportedChains: [intuitionTestnet, intuitionMainnet],
         embeddedWallets: {
           ethereum: { createOnLogin: "users-without-wallets" },
         },
