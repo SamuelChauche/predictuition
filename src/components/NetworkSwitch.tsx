@@ -28,7 +28,7 @@ export function NetworkSwitch() {
         <div
           className={cn(
             "w-1.5 h-1.5 rounded-full",
-            !isMainnet ? "bg-olive" : "bg-muted-foreground/50"
+            !isMainnet ? "bg-frosted-mint-500" : "bg-muted-foreground/50"
           )}
         />
         Testnet

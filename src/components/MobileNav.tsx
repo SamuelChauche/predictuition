@@ -14,9 +14,9 @@ export function MobileNav() {
   return (
     <div className="md:hidden border-b border-border bg-card flex items-center justify-between px-4 py-3">
       <Link to="/" className="text-lg font-bold tracking-tight flex items-center gap-2">
-        <Triangle className="w-5 h-5 text-olive" />
+        <Triangle className="w-5 h-5 text-frosted-mint-500" />
         <span className="text-foreground">Predict</span>
-        <span className="text-olive">uition</span>
+        <span className="text-frosted-mint-500">uition</span>
       </Link>
       <div className="flex items-center gap-2">
         {navItems.map((item) => {
@@ -30,7 +30,7 @@ export function MobileNav() {
               to={item.to}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                active ? "bg-olive/15 text-olive" : "text-muted-foreground hover:text-foreground"
+                active ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon className="w-5 h-5" />

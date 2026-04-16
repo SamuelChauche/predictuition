@@ -11,6 +11,7 @@ import AtomDetail from "@/pages/AtomDetail";
 import TripleDetail from "@/pages/TripleDetail";
 import Market from "@/pages/Market";
 import MarketDetail from "@/pages/MarketDetail";
+import DailyMarket from "@/pages/DailyMarket";
 import Portfolio from "@/pages/Portfolio";
 
 const queryClient = new QueryClient({
@@ -57,6 +58,8 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/market" element={<Market />} />
+                <Route path="/market/melee-daily" element={<DailyMarket slug="melee-daily" />} />
+                <Route path="/market/arena-daily" element={<DailyMarket slug="arena-daily" />} />
                 <Route path="/market/:id" element={<MarketDetail />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/atoms/:id" element={<AtomDetail />} />

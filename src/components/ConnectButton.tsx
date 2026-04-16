@@ -39,7 +39,7 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
           </>
         ) : (
           <>
-            <div className="w-2 h-2 rounded-full bg-olive mr-2" />
+            <div className="w-2 h-2 rounded-full bg-frosted-mint-500 mr-2" />
             <span className="font-mono text-xs">{shortenAddr(address)}</span>
           </>
         )}
@@ -51,7 +51,7 @@ export function ConnectButton({ compact = false }: { compact?: boolean }) {
     <Button
       variant="default"
       size="sm"
-      className={`bg-olive hover:bg-olive/80 text-black font-medium ${compact ? "" : "w-full"}`}
+      className={`bg-frosted-mint-500 hover:bg-frosted-mint-400 text-[#0c4f27] font-medium ${compact ? "" : "w-full"}`}
       onClick={() => login()}
     >
       <Wallet className="w-4 h-4 mr-1" />

@@ -16,9 +16,9 @@ export function Sidebar() {
     <aside className="w-56 shrink-0 border-r border-border bg-card hidden md:flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-border">
         <Link to="/" className="text-lg font-bold tracking-tight flex items-center gap-2">
-          <Triangle className="w-5 h-5 text-olive" />
+          <Triangle className="w-5 h-5 text-frosted-mint-500" />
           <span className="text-foreground">Predict</span>
-          <span className="text-olive">uition</span>
+          <span className="text-frosted-mint-500">uition</span>
         </Link>
       </div>
       <nav className="flex-1 p-3 space-y-1">
@@ -34,8 +34,8 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 active
-                  ? "bg-olive/15 text-olive"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
               )}
             >
               <Icon className="w-4 h-4" />
