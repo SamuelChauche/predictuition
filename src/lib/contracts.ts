@@ -1,7 +1,7 @@
 export const TESTNET_CHAIN_ID = 13579 as const;
 
 export const MARKET_FACTORY_ADDRESS: Partial<Record<number, `0x${string}`>> = {
-  [TESTNET_CHAIN_ID]: "0x1cAd65Dc751EF9D5d5C107Eaf7d25916683C014c",
+  [TESTNET_CHAIN_ID]: "0x8BC0CB1887C3d1a113121f504ff6399Ed9Cf6173",
 };
 
 export const MARKET_FACTORY_ABI = [
@@ -29,6 +29,7 @@ export const MARKET_FACTORY_ABI = [
     inputs: [
       { name: "_conditionType", type: "uint8" },
       { name: "_targetId", type: "bytes32" },
+      { name: "_curveId", type: "uint256" },
       { name: "_targetValue", type: "uint256" },
       { name: "_deadline", type: "uint256" },
       { name: "_lockBuffer", type: "uint256" },
@@ -40,6 +41,7 @@ export const MARKET_FACTORY_ABI = [
 export const MARKET_ABI = [
   { name: "conditionType", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint8" }] },
   { name: "targetId", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bytes32" }] },
+  { name: "curveId", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "targetValue", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "deadline", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "lockTime", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },

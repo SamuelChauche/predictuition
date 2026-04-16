@@ -186,6 +186,7 @@ export function CreateMarketForm({ onCreated }: Props) {
 
   // ── Form state ───────────────────────────────────────────────────────────────
   const [conditionType, setConditionType] = useState<number>(1);
+  const [curveId, setCurveId]             = useState<1 | 2>(1);
   const [targetValue, setTargetValue]     = useState("");
   const [deadlinePreset, setDeadlinePreset] = useState(DEADLINE_PRESETS[2]);
   const [lockPreset, setLockPreset]         = useState(LOCK_PRESETS[0]);
@@ -211,6 +212,7 @@ export function CreateMarketForm({ onCreated }: Props) {
       args: [
         conditionType,
         termIdToBytes32(selected.termId),
+        BigInt(curveId),
         encodeTargetValue(),
         BigInt(now + deadlinePreset.seconds),
         BigInt(lockPreset.seconds),
@@ -358,6 +360,23 @@ export function CreateMarketForm({ onCreated }: Props) {
                       : "bg-muted border-border text-muted-foreground hover:border-teal/40"
                   }`}>
                   {v.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Bonding curve */}
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Bonding curve</label>
+            <div className="flex gap-1.5">
+              {([1, 2] as const).map((id) => (
+                <button key={id} onClick={() => setCurveId(id)}
+                  className={`flex-1 h-8 rounded-md text-xs font-medium transition-colors border ${
+                    curveId === id
+                      ? "bg-teal/20 border-teal text-teal"
+                      : "bg-muted border-border text-muted-foreground hover:border-teal/40"
+                  }`}>
+                  {id === 1 ? "Linear" : "Exponential"}
                 </button>
               ))}
             </div>
