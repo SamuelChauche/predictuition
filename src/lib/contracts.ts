@@ -62,6 +62,21 @@ export const MARKET_ABI = [
   { name: "emergencyRefund", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
 ] as const;
 
+export const MULTIVAULT_ADDRESS: Partial<Record<number, `0x${string}`>> = {
+  [TESTNET_CHAIN_ID]: "0x2Ece8D4dEdcB9918A398528f3fa4688b1d2CAB91",
+  1155: "0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e",
+};
+
+export const MULTIVAULT_ABI = [
+  {
+    name: "isTriple",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "termId", type: "bytes32" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const;
+
 // Condition type labels matching Market.sol constants
 export const CONDITION_LABELS: Record<number, { name: string; yes: string; no: string }> = {
   1: { name: "TVL Above",    yes: "Above", no: "Below"  },
