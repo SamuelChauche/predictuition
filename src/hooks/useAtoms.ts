@@ -51,6 +51,15 @@ export interface PositionData {
   account: { id: string; label: string | null };
 }
 
+function dedupeByTermId<T extends { term_id: string }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    if (seen.has(r.term_id)) return false;
+    seen.add(r.term_id);
+    return true;
+  });
+}
+
 export function useTopAtomsBySharePrice(limit = 10) {
   return useQuery({
     queryKey: ["atoms", "sharePrice", limit],
@@ -59,7 +68,7 @@ export function useTopAtomsBySharePrice(limit = 10) {
         TOP_ATOM_VAULTS_BY_SHARE_PRICE,
         { limit }
       ),
-    select: (data) => data.vaults,
+    select: (data) => dedupeByTermId(data.vaults),
   });
 }
 
@@ -71,7 +80,7 @@ export function useTopAtomsByPositionCount(limit = 10) {
         TOP_ATOM_VAULTS_BY_POSITION_COUNT,
         { limit }
       ),
-    select: (data) => data.vaults,
+    select: (data) => dedupeByTermId(data.vaults),
   });
 }
 
@@ -120,8 +129,8 @@ export function useSharePriceChart(
           end_time: String(endTime),
           interval,
         },
-    placeholderData: keepPreviousData,
       }),
+    placeholderData: keepPreviousData,
     select: (data) => data.getChartJson.data,
     enabled: !!termId,
   });
