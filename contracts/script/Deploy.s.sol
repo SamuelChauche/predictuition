@@ -30,8 +30,7 @@ contract DeployScript is Script {
             factory.setParams(
                 0.001 ether,    // creationBond
                 0.002 ether,    // minVolume
-                100,            // protocolFeeBps  1%
-                100,            // stakerDividendBps 1%
+                100,            // protocolFeeBps 1%
                 0.00001 ether   // resolverReward
             );
         }
@@ -41,9 +40,9 @@ contract DeployScript is Script {
         console2.log("Chain:", block.chainid);
         console2.log("MultiVault:", multiVault);
         console2.log("MarketFactory:", address(factory));
-        console2.log("curveId:", factory.curveId());
         console2.log("creationBond:", factory.creationBond());
         console2.log("minVolume:", factory.minVolume());
+        console2.log("protocolFeeBps:", factory.protocolFeeBps());
         console2.log("feeCollector:", factory.feeCollector());
     }
 }

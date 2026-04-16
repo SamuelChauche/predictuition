@@ -1,148 +1,289 @@
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useSwitchChain,
+} from "wagmi";
+import { formatEther } from "viem";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Wallet, TrendingUp, TrendingDown, Clock, Trophy, User, Link as LinkIcon } from "lucide-react";
-import { useWalletInfo } from "@/components/ConnectButton";
-import { ConnectButton } from "@/components/ConnectButton";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Wallet,
+  TrendingUp,
+  Clock,
+  Trophy,
+  User,
+  Link as LinkIcon,
+  ArrowRightLeft,
+  RefreshCw,
+  Check,
+  ArrowUpRight,
+  AlertTriangle,
+} from "lucide-react";
+import { ConnectButton, useWalletInfo } from "@/components/ConnectButton";
+import { usePortfolio } from "@/hooks/usePortfolio";
+import { useVaultTarget, bytes32ToTermId } from "@/hooks/useVaultTarget";
+import { buildQuestion } from "@/hooks/useOnChainMarkets";
+import { MARKET_ABI, TESTNET_CHAIN_ID } from "@/lib/contracts";
+import type { PortfolioPosition } from "@/hooks/usePortfolio";
 
-interface MockBet {
-  id: string;
-  question: string;
-  side: "yes" | "no";
-  sideLabel: string;
-  amount: number;
-  potentialPayout: number;
-  status: "active" | "won" | "lost";
-  deadline: string;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmt(wei: bigint): string {
+  const n = Number(formatEther(wei));
+  if (n === 0) return "0";
+  if (n < 0.0001) return `<0.0001`;
+  return n.toFixed(4);
 }
 
-const mockBets: MockBet[] = [
-  {
-    id: "1",
-    question: "Will Trust Card share price go UP in the next 24 hours?",
-    side: "yes",
-    sideLabel: "Higher",
-    amount: 10,
-    potentialPayout: 18.4,
-    status: "active",
-    deadline: "Apr 9, 00:00 UTC",
-  },
-  {
-    id: "2",
-    question: 'Will "calebnftgod.eth has tag Top Intuition Community Members" gain more trust?',
-    side: "no",
-    sideLabel: "Bearish",
-    amount: 5,
-    potentialPayout: 12.1,
-    status: "active",
-    deadline: "Apr 9, 00:00 UTC",
-  },
-  {
-    id: "3",
-    question: "Will intuitionbilly.eth share price go UP in the next hour?",
-    side: "yes",
-    sideLabel: "Higher",
-    amount: 2,
-    potentialPayout: 3.6,
-    status: "won",
-    deadline: "Apr 8, 12:00 UTC",
-  },
-  {
-    id: "4",
-    question: "jeblinsky.eth share price change: above or below +5%?",
-    side: "no",
-    sideLabel: "< +5%",
-    amount: 8,
-    potentialPayout: 0,
-    status: "lost",
-    deadline: "Apr 7, 00:00 UTC",
-  },
-];
+// ─── Position row ─────────────────────────────────────────────────────────────
 
-function BetRow({ bet }: { bet: MockBet }) {
-  const isActive = bet.status === "active";
-  const isWon = bet.status === "won";
-  const statusColor = isActive ? "text-sandy" : isWon ? "text-[#90D18D]" : "text-[#bc4b51]";
-  const StatusIcon = isActive ? Clock : isWon ? Trophy : TrendingDown;
+function PositionRow({
+  position,
+  onRefetch,
+}: {
+  position: PortfolioPosition;
+  onRefetch: () => void;
+}) {
+  const { market, side, staked, status, claimable, claimed } = position;
+  const { address, chain } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const isOnTestnet = chain?.id === TESTNET_CHAIN_ID;
+
+  const termId = bytes32ToTermId(market.targetId);
+  const { target } = useVaultTarget(termId);
+
+  const detailPath = termId
+    ? market.isTriple
+      ? `/triples/${termId}`
+      : `/atoms/${termId}`
+    : null;
+
+  const { question, yesLabel, noLabel } = buildQuestion(
+    market.conditionType,
+    market.targetId,
+    market.targetValue,
+    target?.label,
+  );
+
+  const { writeContract, data: txHash, isPending, error: writeError, reset } =
+    useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
+
+  useEffect(() => {
+    if (isSuccess) {
+      onRefetch();
+      setTimeout(reset, 2000);
+    }
+  }, [isSuccess, onRefetch, reset]);
+
+  const txBusy = isPending || isConfirming;
+
+  function handleClaim() {
+    writeContract({ address: market.address, abi: MARKET_ABI, functionName: "claim", chainId: TESTNET_CHAIN_ID });
+  }
+
+  function handleRefund() {
+    writeContract({ address: market.address, abi: MARKET_ABI, functionName: "emergencyRefund", chainId: TESTNET_CHAIN_ID });
+  }
+
+  function handleResolve() {
+    writeContract({ address: market.address, abi: MARKET_ABI, functionName: "resolve", chainId: TESTNET_CHAIN_ID });
+  }
+
+  // Status badge + color
+  const statusConfig = {
+    active:          { label: "Active",          color: "text-teal",      icon: Clock       },
+    locked:          { label: "Locked",           color: "text-sandy",     icon: Clock       },
+    pending_resolve: { label: "Pending resolve",  color: "text-muted-foreground", icon: Clock },
+    won:             { label: "Won",              color: "text-[#90D18D]", icon: Trophy      },
+    lost:            { label: "Lost",             color: "text-[#bc4b51]", icon: TrendingUp  },
+    refund:          { label: "Cancelled",        color: "text-muted-foreground", icon: AlertTriangle },
+  } as const;
+
+  const cfg = statusConfig[status];
+  const StatusIcon = cfg.icon;
+
+  const sideLabel = side === "yes" ? yesLabel : noLabel;
+  const sideColor = side === "yes" ? "text-[#90D18D]" : "text-[#bc4b51]";
 
   return (
-    <div className="flex items-center gap-4 py-3 border-b border-border last:border-0">
-      <StatusIcon className={`w-4 h-4 shrink-0 ${statusColor}`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground truncate">{bet.question}</p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-          <span className={bet.side === "yes" ? "text-[#90D18D]" : "text-[#bc4b51]"}>
-            {bet.sideLabel}
-          </span>
-          <span>&middot;</span>
-          <span>{bet.deadline}</span>
+    <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+      <StatusIcon className={`w-4 h-4 mt-0.5 shrink-0 ${cfg.color}`} />
+
+      <div className="flex-1 min-w-0 space-y-1">
+        {/* Target link */}
+        {target && detailPath && (
+          <Link
+            to={detailPath}
+            className="inline-flex items-center gap-1 text-xs text-teal hover:text-teal/80 hover:underline"
+          >
+            {target.label}
+            <ArrowUpRight className="w-3 h-3 shrink-0" />
+          </Link>
+        )}
+
+        {/* Question */}
+        <p className="text-sm text-foreground leading-snug">{question}</p>
+
+        {/* Meta */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <span className={`font-medium ${sideColor}`}>{sideLabel}</span>
+          <span>·</span>
+          <span className={cfg.color}>{cfg.label}</span>
+          {(status === "active" || status === "locked") && market.deadlineTs && (
+            <>
+              <span>·</span>
+              <span>Deadline {new Date(market.deadlineTs * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+            </>
+          )}
         </div>
+
+        {/* Error */}
+        {writeError && (
+          <p className="text-xs text-[#bc4b51]">{writeError.message.slice(0, 100)}</p>
+        )}
+
+        {/* Actions */}
+        {address && (
+          <div className="pt-0.5">
+            {!isOnTestnet && (status === "won" || status === "refund" || status === "pending_resolve") ? (
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => switchChain({ chainId: TESTNET_CHAIN_ID })}>
+                <ArrowRightLeft className="w-3 h-3 mr-1" />
+                Switch to Testnet
+              </Button>
+            ) : status === "won" && !claimed ? (
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-[#90D18D] hover:bg-[#90D18D]/80 text-black font-medium"
+                disabled={txBusy}
+                onClick={handleClaim}
+              >
+                {txBusy ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
+                {txBusy ? "Claiming…" : `Claim ${fmt(claimable)} TRUST`}
+              </Button>
+            ) : status === "won" && claimed ? (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Check className="w-3 h-3 text-[#90D18D]" /> Claimed
+              </span>
+            ) : status === "refund" ? (
+              <Button size="sm" variant="outline" className="h-7 text-xs" disabled={txBusy} onClick={handleRefund}>
+                {txBusy ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : null}
+                {txBusy ? "Refunding…" : `Refund ${fmt(staked)} TRUST`}
+              </Button>
+            ) : status === "pending_resolve" ? (
+              <Button size="sm" variant="outline" className="h-7 text-xs" disabled={txBusy} onClick={handleResolve}>
+                {txBusy ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : null}
+                {txBusy ? "Resolving…" : "Resolve Market"}
+              </Button>
+            ) : null}
+          </div>
+        )}
       </div>
+
+      {/* Amount */}
       <div className="text-right shrink-0">
-        <p className="text-sm font-mono font-medium">{bet.amount} TRUST</p>
-        {isActive && (
-          <p className="text-xs font-mono text-[#90D18D]">→ {bet.potentialPayout.toFixed(1)}</p>
+        <p className="text-sm font-mono font-medium">{fmt(staked)} TRUST</p>
+        {status === "won" && (
+          <p className="text-xs font-mono text-[#90D18D]">→ {fmt(claimable)}</p>
         )}
-        {isWon && (
-          <p className="text-xs font-mono text-[#90D18D]">+{(bet.potentialPayout - bet.amount).toFixed(1)}</p>
+        {status === "lost" && (
+          <p className="text-xs font-mono text-[#bc4b51]">−{fmt(staked)}</p>
         )}
-        {bet.status === "lost" && (
-          <p className="text-xs font-mono text-[#bc4b51]">-{bet.amount.toFixed(1)}</p>
+        {status === "refund" && (
+          <p className="text-xs font-mono text-muted-foreground">refund</p>
         )}
       </div>
     </div>
   );
 }
 
+// ─── Stat card ────────────────────────────────────────────────────────────────
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-1 pt-4 px-4 flex flex-row items-center gap-2">
+        <Icon className={`w-4 h-4 ${color}`} />
+        <p className="text-xs text-muted-foreground">{label}</p>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        <p className={`text-xl font-bold ${color}`}>{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function Portfolio() {
   const wallet = useWalletInfo();
-  const activeBets = mockBets.filter((b) => b.status === "active");
-  const resolvedBets = mockBets.filter((b) => b.status !== "active");
-  const totalStaked = activeBets.reduce((s, b) => s + b.amount, 0);
-  const totalWon = resolvedBets
-    .filter((b) => b.status === "won")
-    .reduce((s, b) => s + b.potentialPayout - b.amount, 0);
-  const totalLost = resolvedBets
-    .filter((b) => b.status === "lost")
-    .reduce((s, b) => s + b.amount, 0);
-  const pnl = totalWon - totalLost;
+  const { address } = useAccount();
+
+  const {
+    activePositions,
+    wonPositions,
+    lostPositions,
+    pendingPositions,
+    refundPositions,
+    totalStaked,
+    totalProfit,
+    pnl,
+    isLoading,
+    refetch,
+  } = usePortfolio();
+
+  const openPositions   = [...activePositions, ...pendingPositions];
+  const closedPositions = [...wonPositions, ...lostPositions, ...refundPositions];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">My Portfolio</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Your positions and betting history.
+          Your positions and betting history on Intuition Testnet.
         </p>
       </div>
 
-      {/* Wallet Info */}
+      {/* Wallet */}
       {wallet.isConnected && wallet.address ? (
         <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#734BBD]/20 flex items-center justify-center">
-                  <User className="w-5 h-5" style={{ color: "#734BBD" }} />
-                </div>
-                <div>
-                  <p className="font-mono text-sm font-bold text-foreground">{wallet.shortAddress}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-teal/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-teal" />
+              </div>
+              <div>
+                <p className="font-mono text-sm font-bold text-foreground">{wallet.shortAddress}</p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                  <span className="inline-flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3" />
+                    {wallet.chainName} · chain {wallet.chainId}
+                  </span>
+                  {wallet.balance && (
                     <span className="inline-flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3" />
-                      {wallet.chainName} (chain {wallet.chainId})
+                      <Wallet className="w-3 h-3" />
+                      {wallet.balance}
                     </span>
-                    {wallet.balance && (
-                      <span className="inline-flex items-center gap-1">
-                        <Wallet className="w-3 h-3" />
-                        {wallet.balance}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -150,7 +291,7 @@ export default function Portfolio() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="pt-5 flex flex-col items-center gap-3 py-8">
+          <CardContent className="flex flex-col items-center gap-3 py-10">
             <Wallet className="w-8 h-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Connect your wallet to see your positions</p>
             <ConnectButton />
@@ -159,81 +300,92 @@ export default function Portfolio() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <Wallet className="w-4 h-4 text-olive" />
-            <CardDescription>Active Stake</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold text-olive">{totalStaked} TRUST</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <Clock className="w-4 h-4 text-sandy" />
-            <CardDescription>Active Bets</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold text-sandy">{activeBets.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <Trophy className="w-4 h-4 text-gold" />
-            <CardDescription>Won</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold text-gold">+{totalWon.toFixed(1)} TRUST</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <TrendingUp className={`w-4 h-4 ${pnl >= 0 ? "text-[#90D18D]" : "text-[#bc4b51]"}`} />
-            <CardDescription>PnL</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-xl font-bold ${pnl >= 0 ? "text-[#90D18D]" : "text-[#bc4b51]"}`}>
-              {pnl >= 0 ? "+" : ""}{pnl.toFixed(1)} TRUST
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {address && (
+        isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              icon={Wallet}
+              label="Active Stake"
+              value={`${fmt(totalStaked)} TRUST`}
+              color="text-olive"
+            />
+            <StatCard
+              icon={Clock}
+              label="Active Bets"
+              value={String(openPositions.length)}
+              color="text-sandy"
+            />
+            <StatCard
+              icon={Trophy}
+              label="Profit"
+              value={`+${fmt(totalProfit)} TRUST`}
+              color="text-gold"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="PnL"
+              value={`${pnl >= 0n ? "+" : "−"}${fmt(pnl >= 0n ? pnl : -pnl)} TRUST`}
+              color={pnl >= 0n ? "text-[#90D18D]" : "text-[#bc4b51]"}
+            />
+          </div>
+        )
+      )}
 
       {/* Active Bets */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="w-5 h-5 text-sandy" />
-            Active Bets
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activeBets.length > 0 ? (
-            activeBets.map((b) => <BetRow key={b.id} bet={b} />)
-          ) : (
-            <p className="text-muted-foreground text-sm">No active bets.</p>
-          )}
-        </CardContent>
-      </Card>
+      {address && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-sandy" />
+              Active Bets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 rounded" />)}
+              </div>
+            ) : openPositions.length > 0 ? (
+              openPositions.map((p) => (
+                <PositionRow key={p.market.address} position={p} onRefetch={refetch} />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">No open positions.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-gold" />
-            History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {resolvedBets.length > 0 ? (
-            resolvedBets.map((b) => <BetRow key={b.id} bet={b} />)
-          ) : (
-            <p className="text-muted-foreground text-sm">No resolved bets yet.</p>
-          )}
-        </CardContent>
-      </Card>
-
+      {address && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-gold" />
+              History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 rounded" />)}
+              </div>
+            ) : closedPositions.length > 0 ? (
+              closedPositions.map((p) => (
+                <PositionRow key={p.market.address} position={p} onRefetch={refetch} />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">No resolved positions yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

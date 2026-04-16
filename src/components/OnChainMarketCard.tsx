@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   useAccount,
   useReadContracts,
@@ -20,6 +20,7 @@ import {
   RefreshCw,
   ArrowRightLeft,
   ExternalLink,
+  ArrowUpRight,
 } from "lucide-react";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { MARKET_ABI, TESTNET_CHAIN_ID } from "@/lib/contracts";
@@ -33,7 +34,6 @@ interface Props {
 }
 
 export function OnChainMarketCard({ market, onRefetch }: Props) {
-  const navigate = useNavigate();
   const { address, chain } = useAccount();
   const { switchChain } = useSwitchChain();
 
@@ -41,11 +41,12 @@ export function OnChainMarketCard({ market, onRefetch }: Props) {
   const termId = bytes32ToTermId(market.targetId);
   const { target } = useVaultTarget(termId);
 
-  function handleTargetClick() {
-    if (!target) return;
-    if (target.category === "atoms") navigate(`/atoms/${target.termId}`);
-    else if (target.category === "triples") navigate(`/triples/${target.termId}`);
-  }
+  const detailPath = termId
+    ? market.isTriple
+      ? `/triples/${termId}`
+      : `/atoms/${termId}`
+    : null;
+
   const { question, yesLabel, noLabel } = buildQuestion(
     market.conditionType,
     market.targetId,
@@ -188,13 +189,14 @@ export function OnChainMarketCard({ market, onRefetch }: Props) {
               />
             )}
             <div className="min-w-0">
-              {target && (
-                <button
-                  onClick={handleTargetClick}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:underline truncate block max-w-full transition-colors text-left"
+              {target && detailPath && (
+                <Link
+                  to={detailPath}
+                  className="inline-flex items-center gap-1 text-xs text-teal hover:text-teal/80 hover:underline truncate max-w-full transition-colors"
                 >
                   {target.label}
-                </button>
+                  <ArrowUpRight className="w-3 h-3 shrink-0" />
+                </Link>
               )}
               <p className="text-sm font-semibold text-foreground leading-snug">{question}</p>
             </div>
@@ -205,8 +207,8 @@ export function OnChainMarketCard({ market, onRefetch }: Props) {
         {/* Target stats */}
         {target && (
           <div className="flex gap-3 text-xs text-muted-foreground">
-            <span>Price <span className="font-mono text-foreground">{target.sharePrice.toFixed(4)} TRUST</span></span>
-            <span>TVL <span className="font-mono text-foreground">{target.tvl.toFixed(2)} TRUST</span></span>
+            <span>Price <span className="font-mono font-semibold text-teal">{target.sharePrice.toFixed(4)} TRUST</span></span>
+            <span>TVL <span className="font-mono font-semibold text-sandy">{target.tvl.toFixed(2)} TRUST</span></span>
             <span>{target.positionCount} positions</span>
           </div>
         )}

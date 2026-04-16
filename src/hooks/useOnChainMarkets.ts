@@ -4,6 +4,8 @@ import {
   MARKET_FACTORY_ADDRESS,
   MARKET_FACTORY_ABI,
   MARKET_ABI,
+  MULTIVAULT_ADDRESS,
+  MULTIVAULT_ABI,
   CONDITION_LABELS,
   TESTNET_CHAIN_ID,
 } from "@/lib/contracts";
@@ -23,6 +25,7 @@ export interface OnChainMarket {
   remainingPoolAfterFees: bigint;
   minVolume: bigint;
   creator: `0x${string}`;
+  isTriple: boolean;
   question: string;
   yesLabel: string;
   noLabel: string;
@@ -31,7 +34,8 @@ export interface OnChainMarket {
 // Fields read per market (must match order in marketContracts below)
 const FIELDS_PER_MARKET = 13;
 
-const FACTORY_ADDR = MARKET_FACTORY_ADDRESS[TESTNET_CHAIN_ID]!;
+const FACTORY_ADDR    = MARKET_FACTORY_ADDRESS[TESTNET_CHAIN_ID]!;
+const MULTIVAULT_ADDR = MULTIVAULT_ADDRESS[TESTNET_CHAIN_ID]!;
 
 export function useOnChainMarkets() {
   // Step 1: fetch all market addresses from factory
@@ -80,6 +84,24 @@ export function useOnChainMarkets() {
     },
   });
 
+  // Step 3: batch-read isTriple(targetId) from MultiVault for each market.
+  // targetId is at offset 1 in the step-2 batch — extract it without waiting for a full parse.
+  const isTripleContracts = addresses.map((_, i) => ({
+    address: MULTIVAULT_ADDR,
+    abi: MULTIVAULT_ABI,
+    functionName: "isTriple" as const,
+    args: [(marketData?.[i * FIELDS_PER_MARKET + 1]?.result ?? "0x0000000000000000000000000000000000000000000000000000000000000000") as `0x${string}`] as const,
+    chainId: TESTNET_CHAIN_ID,
+  }));
+
+  const { data: isTripleData } = useReadContracts({
+    contracts: isTripleContracts,
+    query: {
+      enabled: addresses.length > 0 && !!marketData,
+      refetchInterval: 60_000,
+    },
+  });
+
   const markets: OnChainMarket[] = addresses.map((addr, i) => {
     const base = i * FIELDS_PER_MARKET;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,6 +121,7 @@ export function useOnChainMarkets() {
     const minVolume    = (get(11) ?? 0n)  as bigint;
     const creator      = (get(12) ?? "0x") as `0x${string}`;
 
+    const isTriple    = Boolean(isTripleData?.[i]?.result);
     const { question, yesLabel, noLabel } = buildQuestion(conditionType, targetId, targetValue);
 
     return {
@@ -116,6 +139,7 @@ export function useOnChainMarkets() {
       remainingPoolAfterFees,
       minVolume,
       creator,
+      isTriple,
       question,
       yesLabel,
       noLabel,
